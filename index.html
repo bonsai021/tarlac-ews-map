@@ -9,52 +9,52 @@
         #map { height: 100vh; width: 100%; background: #ffffff; }
         body { margin: 0; padding: 0; font-family: sans-serif; }
         
-        /* Legend Styles */
-        .legend {
-            padding: 10px;
+        /* Legend Styling */
+        .info.legend {
             background: white;
-            line-height: 1.5em;
-            border: 2px solid #ccc;
+            padding: 10px 14px;
+            font-size: 14px;
+            line-height: 24px;
+            color: #333;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
             border-radius: 5px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            border: 2px solid #2c3e50;
         }
-        .legend i {
-            width: 15px; height: 15px;
-            float: left; margin-right: 8px;
-            opacity: 0.9; border-radius: 50%;
+        .info.legend i {
+            width: 16px; height: 16px; float: left;
+            margin-right: 8px; opacity: 0.9;
+            border-radius: 50%; margin-top: 4px;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map');
+        // 1. Initialize Map with a safe default center for Tarlac
+        // If anything fails, you will at least see the map!
+        var map = L.map('map').setView([15.48, 120.59], 10);
+        
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 1. Tarlac Boundary
-        fetch('https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/2023/geojson/provinces/lowres/tarlac.geojson')
-            .then(res => res.json())
-            .then(geojsonData => {
-                var boundary = L.geoJSON(geojsonData, {
-                    style: { color: "#2c3e50", weight: 3, fillOpacity: 0 }
-                }).addTo(map);
-                map.fitBounds(boundary.getBounds(), { padding: [30, 30] });
-            });
+        // 2. Create a FeatureGroup to hold our data points
+        var ewsMarkers = L.featureGroup().addTo(map);
 
-        // 2. Data Link
-        var csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; 
+        // 3. Your Live CSV Link
+        var csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; // <-- PASTE YOUR GOOGLE SHEETS LINK HERE
 
         function getColor(status) {
-            var s = status ? status.toUpperCase() : '';
+            if (!status) return 'gray';
+            var s = status.toUpperCase();
             if (s.includes('UP')) return '#2e7d32';
             if (s.includes('DOWN')) return '#c62828';
             if (s.includes('RELOCATION')) return '#6a1b9a';
             if (s.includes('MAINTENANCE')) return '#ef6c00';
-            return '#7f8c8d';
+            return '#1565c0';
         }
 
+        // 4. Parse CSV and Add Markers
         Papa.parse(csvUrl, {
             download: true,
             header: true,
@@ -62,48 +62,61 @@
             complete: function(results) {
                 results.data.forEach(function(row) {
                     var lat = parseFloat(row['LATITUDE']);
-                    var lng = parseFloat(row['LONGTITUDE']);
+                    var lng = parseFloat(row['LONGTITUDE']); 
                     
                     if (!isNaN(lat) && !isNaN(lng)) {
+                        
+                        var metricsHtml = "";
+                        var deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "";
+                        
+                        if (deviceType.includes('WLMS') && row['WATER_LEVEL_M']) {
+                            metricsHtml += `<b>Water Level:</b> <span style="color:#0277bd; font-weight:bold;">${row['WATER_LEVEL_M']} m</span><br>`;
+                        }
+                        if (deviceType.includes('ARG') && row['RAINFALL_MM']) {
+                            metricsHtml += `<b>Rainfall:</b> <span style="color:#0288d1; font-weight:bold;">${row['RAINFALL_MM']} mm</span><br>`;
+                        }
+
                         var marker = L.circleMarker([lat, lng], {
-                            radius: 10,
+                            radius: 9,
                             fillColor: getColor(row['Status']),
                             color: "#fff",
                             weight: 2,
                             fillOpacity: 0.9
-                        }).addTo(map);
-
-                        // Dynamic Popup based on Device Type
-                        var measurement = "";
-                        if (row['DEVICE TYPE'] === 'WLMS') {
-                            measurement = `<b>Water Level:</b> ${row['WATER_LEVEL'] || '0'} m<br>`;
-                        } else if (row['DEVICE TYPE'] === 'ARG') {
-                            measurement = `<b>Rainfall:</b> ${row['RAINFALL'] || '0'} mm<br>`;
-                        }
+                        });
 
                         marker.bindPopup(`
-                            <div style="font-size:13px;">
-                                <strong>${row['LIST OF INSTRUMENT']}</strong><br>
-                                <hr>
+                            <div style="line-height:1.6; min-width: 180px;">
+                                <strong style="font-size:1.1em;">${row['LIST OF INSTRUMENT']}</strong><br>
+                                <hr style="margin: 5px 0;">
+                                <b>Type:</b> ${row['DEVICE TYPE']}<br>
                                 <b>Status:</b> ${row['Status']}<br>
-                                ${measurement}
-                                <b>Last Update:</b> ${row['UPDATE:']}
+                                ${metricsHtml}
+                                <hr style="margin: 5px 0;">
+                                <small><b>Updated:</b> ${row['UPDATE:']}</small>
                             </div>
                         `);
+
+                        // Add the marker to the group instead of directly to the map
+                        marker.addTo(ewsMarkers);
                     }
                 });
+
+                // 5. AUTO-CROP: Zoom map to perfectly fit all your loaded sensors!
+                if (ewsMarkers.getLayers().length > 0) {
+                    map.fitBounds(ewsMarkers.getBounds(), { padding: [40, 40] });
+                }
             }
         });
 
-        // 3. Add the Legend
+        // 6. Add the Legend
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<b>EWS Status</b><br>';
+            var div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML += '<strong style="display:block; margin-bottom:8px;">Sensor Status</strong>';
             div.innerHTML += '<i style="background: #2e7d32"></i> UP<br>';
             div.innerHTML += '<i style="background: #c62828"></i> DOWN<br>';
-            div.innerHTML += '<i style="background: #ef6c00"></i> MAINTENANCE<br>';
-            div.innerHTML += '<i style="background: #6a1b9a"></i> RELOCATION<br>';
+            div.innerHTML += '<i style="background: #ef6c00"></i> UNDER MAINTENANCE<br>';
+            div.innerHTML += '<i style="background: #6a1b9a"></i> FOR RELOCATION<br>';
             return div;
         };
         legend.addTo(map);
