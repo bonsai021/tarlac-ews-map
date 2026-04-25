@@ -16,7 +16,7 @@
         body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; }
         #map { height: 100vh; width: 100vw; background: #f3f4f6; } 
 
-        /* --- Top Control Pill (Theme Switch & Title) --- */
+        /* --- Top Control Pill --- */
         .control-panel {
             position: absolute;
             top: 15px; 
@@ -80,7 +80,6 @@
         .stat-label { font-size: 10px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
         .stat-value { font-size: 14px; font-weight: 800; color: #f8fafc; }
 
-        /* Indicator Dots */
         .indicator-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
         .dot-up { background: #10b981; }      
         .dot-down { background: #ef4444; }    
@@ -96,7 +95,7 @@
         @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         .marker-fews { animation: pulse-fews 2s infinite; }
 
-        /* --- NEW: River Flow Animations --- */
+        /* --- River Flow Animations --- */
         .river-normal { transition: all 0.5s ease; stroke-linejoin: round; stroke-linecap: round; }
         .river-warning { stroke-dasharray: 8, 8; animation: flow 1.5s linear infinite; stroke-linejoin: round; }
         .river-critical { stroke-dasharray: 12, 12; animation: flow 0.8s linear infinite; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(239,68,68,0.8)); }
@@ -135,26 +134,12 @@
     <div class="health-panel">
         <h3>Network Health <span id="statTotal" style="color: #38bdf8;">0 Total</span></h3>
         
-        <div class="health-stat">
-            <div class="stat-label"><div class="indicator-dot dot-up"></div> ACTIVE (UP)</div>
-            <div class="stat-value" id="statUp">0</div>
-        </div>
-        <div class="health-stat">
-            <div class="stat-label"><div class="indicator-dot dot-down"></div> OFFLINE (DOWN)</div>
-            <div class="stat-value" id="statDown">0</div>
-        </div>
-        <div class="health-stat">
-            <div class="stat-label"><div class="indicator-dot dot-maint"></div> MAINTENANCE</div>
-            <div class="stat-value" id="statMaint">0</div>
-        </div>
-        <div class="health-stat">
-            <div class="stat-label"><div class="indicator-dot dot-reloc"></div> RELOCATION</div>
-            <div class="stat-value" id="statReloc">0</div>
-        </div>
-        <div class="health-stat">
-            <div class="stat-label"><span class="dot-fews">🚨</span> FEWS SIRENS</div>
-            <div class="stat-value" id="statFews" style="color: #cbd5e1;">0</div>
-        </div>
+        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-up"></div> ACTIVE (UP)</div><div class="stat-value" id="statUp">0</div></div>
+        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-down"></div> OFFLINE (DOWN)</div><div class="stat-value" id="statDown">0</div></div>
+        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-maint"></div> MAINTENANCE</div><div class="stat-value" id="statMaint">0</div></div>
+        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-reloc"></div> RELOCATION</div><div class="stat-value" id="statReloc">0</div></div>
+        <div class="health-stat" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;"><div class="stat-label"><span class="dot-fews">🚨</span> FEWS SIRENS</div><div class="stat-value" id="statFews" style="color: #cbd5e1;">0</div></div>
+        
         <div class="health-stat" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-bottom: 0;">
             <div class="stat-label"><span style="font-size: 14px; margin-right: 4px;">🌊</span> RIVER FLOW</div>
             <div class="stat-value" id="statRiver" style="color: #3b82f6; font-size: 11px;">NORMAL</div>
@@ -164,10 +149,9 @@
     <div id="map"></div>
 
     <script>
-        var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
+        var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 11);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
-        // Basemap Layers
         var darkBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
         var lightBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
 
@@ -181,21 +165,23 @@
             currentBasemap.bringToBack(); 
         });
 
-        // --- NEW: River GeoJSON Data (Approximate Tarlac River System) ---
-        // Coordinates format: [Longitude, Latitude]
+        // =====================================================================
+        // GIS DATA: REPLACE THIS WITH YOUR ACTUAL PDRRMO RIVER SHAPEFILE LATER
+        // =====================================================================
+        // These coordinates have been adjusted to realistically trace the 
+        // Tarlac River flowing North-Northeast past Tarlac City.
         var tarlacRiverGeoJSON = {
             "type": "FeatureCollection",
             "features": [
-                { "type": "Feature", "properties": { "segment": "upstream", "name": "Upper River" }, "geometry": { "type": "LineString", "coordinates": [[120.45, 15.60], [120.48, 15.58], [120.50, 15.55], [120.55, 15.50], [120.59, 15.48]] } },
-                { "type": "Feature", "properties": { "segment": "midstream", "name": "Mid River" }, "geometry": { "type": "LineString", "coordinates": [[120.59, 15.48], [120.61, 15.46], [120.64, 15.43], [120.67, 15.38]] } },
-                { "type": "Feature", "properties": { "segment": "downstream", "name": "Lower River" }, "geometry": { "type": "LineString", "coordinates": [[120.67, 15.38], [120.69, 15.35], [120.70, 15.32], [120.75, 15.25]] } }
+                { "type": "Feature", "properties": { "segment": "upstream", "name": "Upper River" }, "geometry": { "type": "LineString", "coordinates": [[120.550, 15.380], [120.575, 15.430], [120.590, 15.465]] } },
+                { "type": "Feature", "properties": { "segment": "midstream", "name": "Mid River" }, "geometry": { "type": "LineString", "coordinates": [[120.590, 15.465], [120.602, 15.485], [120.605, 15.510]] } },
+                { "type": "Feature", "properties": { "segment": "downstream", "name": "Lower River" }, "geometry": { "type": "LineString", "coordinates": [[120.605, 15.510], [120.595, 15.560], [120.580, 15.620]] } }
             ]
         };
 
-        // Add river layer underneath the markers
         var riverLayer = L.geoJSON(tarlacRiverGeoJSON, {
             style: function(feature) {
-                return { color: '#3b82f6', weight: 4, opacity: 0.5, className: 'river-normal' };
+                return { color: '#3b82f6', weight: 4, opacity: 0.6, className: 'river-normal' };
             }
         }).addTo(map);
 
@@ -213,7 +199,6 @@
             return '#3b82f6'; 
         }
 
-        // Live Polling Setup
         fetchData();
         setInterval(fetchData, 60000); 
 
@@ -225,8 +210,6 @@
                 complete: function(results) {
                     ewsMarkers.clearLayers();
                     var counts = { total: 0, up: 0, down: 0, maint: 0, reloc: 0, fews: 0 };
-                    
-                    // Track highest water level for river dynamics
                     var maxWaterLevel = 0;
 
                     results.data.forEach(function(row) {
@@ -234,7 +217,6 @@
                         var lng = parseFloat(row['LONGITUDE']); 
                         
                         if (!isNaN(lat) && !isNaN(lng)) {
-                            
                             counts.total++;
                             var rawStatus = (row['Status'] || "").toUpperCase();
                             var deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "";
@@ -251,11 +233,7 @@
                             if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && row['WATER_LEVEL_M']) {
                                 let wl = parseFloat(row['WATER_LEVEL_M']);
                                 metricsHtml += `<b>Water Level:</b> <span style="color:#0284c7; font-weight:800;">${wl} m</span><br>`;
-                                
-                                // Capture the highest water level for the river animation
-                                if (!isNaN(wl) && wl > maxWaterLevel) {
-                                    maxWaterLevel = wl;
-                                }
+                                if (!isNaN(wl) && wl > maxWaterLevel) { maxWaterLevel = wl; }
                             }
                             if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && row['RAINFALL_MM']) {
                                 metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${row['RAINFALL_MM']} mm</span><br>`;
@@ -310,24 +288,22 @@
                         }
                     });
 
-                    // --- NEW: Dynamic River Flow Logic ---
-                    // Adjust these thresholds to match Tarlac's actual critical benchmarks
+                    // Update River Flow Visuals
                     var riverState = 'normal';
                     if (maxWaterLevel >= 5.0) riverState = 'critical';
                     else if (maxWaterLevel >= 3.0) riverState = 'warning';
 
-                    // Update Map Graphics
                     riverLayer.setStyle(function(feature) {
                         if (riverState === 'critical') {
-                            if (feature.properties.segment === 'midstream') return { color: '#f59e0b', weight: 6, opacity: 0.8, className: 'river-warning' }; // Orange
-                            if (feature.properties.segment === 'downstream') return { color: '#ef4444', weight: 8, opacity: 0.9, className: 'river-critical' }; // Pulsing Red
+                            if (feature.properties.segment === 'midstream') return { color: '#f59e0b', weight: 6, opacity: 0.8, className: 'river-warning' }; 
+                            if (feature.properties.segment === 'downstream') return { color: '#ef4444', weight: 8, opacity: 0.9, className: 'river-critical' }; 
                         } else if (riverState === 'warning') {
                             if (feature.properties.segment === 'midstream' || feature.properties.segment === 'downstream') return { color: '#f59e0b', weight: 5, opacity: 0.7, className: 'river-warning' };
                         }
-                        return { color: '#3b82f6', weight: 4, opacity: 0.4, className: 'river-normal' };
+                        return { color: '#3b82f6', weight: 4, opacity: 0.5, className: 'river-normal' };
                     });
 
-                    // Update UI Dashboard Text
+                    // Update UI Dashboard
                     var statRiver = document.getElementById('statRiver');
                     if (riverState === 'critical') {
                         statRiver.innerText = 'CRITICAL FLOOD';
@@ -340,7 +316,6 @@
                         statRiver.style.color = '#3b82f6';
                     }
 
-                    // Standard Tally Updates
                     document.getElementById('statTotal').innerText = `${counts.total} Total`;
                     document.getElementById('statUp').innerText = counts.up;
                     document.getElementById('statDown').innerText = counts.down;
