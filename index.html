@@ -10,10 +10,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; }
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; overflow: hidden; }
         #map { height: 100vh; width: 100vw; background: #f3f4f6; } 
 
         /* --- Top Control Pill --- */
@@ -148,30 +150,14 @@
         .history-title { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
         
         .history-log { 
-            display: flex; 
-            flex-direction: row; 
-            gap: 8px; 
-            overflow-x: auto; 
-            overflow-y: hidden; 
-            background: #f8fafc; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 6px; 
-            padding: 8px; 
-            max-width: 100%;
+            display: flex; flex-direction: row; gap: 8px; overflow-x: auto; overflow-y: hidden; 
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; max-width: 100%;
         }
         
         .history-item { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            flex: 0 0 auto; 
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 6px 10px;
-            min-width: 60px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 0 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px;
+            padding: 6px 10px; min-width: 60px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         
         .history-time { font-weight: 700; color: #64748b; font-size: 9px; margin-bottom: 3px; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px; width: 100%; text-align: center; }
@@ -181,6 +167,56 @@
         .history-log::-webkit-scrollbar-track { background: transparent; }
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* --- NEW: View Chart Button --- */
+        .btn-view-chart {
+            width: 100%;
+            background: #f8fafc;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-view-chart:hover { background: #0284c7; color: white; border-color: #0284c7; }
+
+        /* --- NEW: Bottom Chart Panel UI --- */
+        #chart-panel {
+            position: absolute;
+            bottom: -400px; /* Hidden off-screen by default */
+            left: 0;
+            width: 100vw;
+            height: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 2000;
+            transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 20px 30px;
+            box-sizing: border-box;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        }
+        #chart-panel.open { bottom: 0; }
+        
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .chart-title { font-size: 14px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .chart-close:hover { background: #ef4444; color: white; }
+        
+        .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
 
     </style>
 </head>
@@ -222,6 +258,16 @@
 
     <div id="map"></div>
 
+    <div id="chart-panel">
+        <div class="chart-header">
+            <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
+            <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="chart-container">
+            <canvas id="historyChart"></canvas>
+        </div>
+    </div>
+
     <script>
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
@@ -238,8 +284,7 @@
             currentBasemap.bringToBack(); 
         });
 
-        // Layers
-        var ewsBuffers = L.featureGroup().addTo(map); // Layer for on-demand buffers
+        var ewsBuffers = L.featureGroup().addTo(map); 
         var ewsMarkers = L.featureGroup().addTo(map);
         
         // ==============================================================================
@@ -252,7 +297,10 @@
         // ==============================================================================
         
         var allDownloadedData = [];
-        var archivedHistoryMap = {}; 
+        
+        // NEW: Upgraded Data Engine to hold both HTML for the timeline and RAW numbers for the Chart
+        var archivedDataMap = {}; 
+        var currentChartInstance = null; // Holds the active Chart.js object
 
         function getColor(status) {
             if (!status) return '#475569'; 
@@ -292,10 +340,9 @@
             ]);
 
             allDownloadedData = mainData;
-            archivedHistoryMap = {};
+            archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
 
-            // --- PROCESS ARCHIVE ---
             for (let i = archiveData.length - 1; i >= 0; i--) {
                 let row = archiveData[i];
                 let keys = Object.keys(row);
@@ -309,7 +356,10 @@
                     
                     let historyKey = sensorName + "_" + deviceType; 
 
-                    if (!archivedHistoryMap[historyKey]) archivedHistoryMap[historyKey] = [];
+                    // Prepare object to hold both HTML for the popup and Raw Numbers for the chart
+                    if (!archivedDataMap[historyKey]) {
+                        archivedDataMap[historyKey] = { html: [], raw: [] };
+                    }
                     
                     let rawWl = getMetric(row, 'WATER', 'COLUMN 6');
                     let rawRg = getMetric(row, 'RAIN', 'COLUMN 7');
@@ -329,12 +379,21 @@
                     if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         
-                        archivedHistoryMap[historyKey].push(`
+                        // Push HTML for the Carousel
+                        archivedDataMap[historyKey].html.push(`
                             <div class="history-item">
                                 <span class="history-time">${timeStr}</span>
                                 <span class="history-metrics">${metricsArray.join('')}</span>
                             </div>
                         `);
+
+                        // Push RAW DATA for the Line Chart
+                        archivedDataMap[historyKey].raw.push({
+                            timestamp: recordDate.getTime(), // Unix time for sorting
+                            timeStr: timeStr,
+                            wl: wlVal,
+                            rg: rgVal
+                        });
                     }
                 }
             }
@@ -348,7 +407,7 @@
 
         function renderMapData() {
             ewsMarkers.clearLayers();
-            ewsBuffers.clearLayers(); // Clean up buffers on re-render
+            ewsBuffers.clearLayers(); 
             var counts = { total: 0, up: 0, down: 0, maint: 0, reloc: 0, fews: 0 };
             var activeFilter = document.getElementById('sensorFilter').value;
 
@@ -389,17 +448,24 @@
 
                         var historyKey = sensorName + "_" + deviceType; 
 
-                        // Build HORIZONTAL history box HTML
+                        // Build HORIZONTAL history box HTML + The Chart Button
                         var historyHtml = "";
-                        if (archivedHistoryMap[historyKey] && archivedHistoryMap[historyKey].length > 0) {
+                        if (archivedDataMap[historyKey] && archivedDataMap[historyKey].html.length > 0) {
+                            
+                            // Safely encode the key to pass into the onclick function
+                            let encodedKey = encodeURIComponent(historyKey);
+
                             historyHtml = `
                                 <div class="history-container">
                                     <div class="history-title">
                                         <i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours Timeline
                                     </div>
                                     <div class="history-log">
-                                        ${archivedHistoryMap[historyKey].join('')}
+                                        ${archivedDataMap[historyKey].html.join('')}
                                     </div>
+                                    <button class="btn-view-chart" onclick="window.openChart('${encodedKey}')">
+                                        <i class="fa-solid fa-chart-line"></i> View Line Chart
+                                    </button>
                                 </div>
                             `;
                         }
@@ -424,7 +490,6 @@
 
                         var marker = L.marker([lat, lng], { icon: customIcon });
                         
-                        // Attach hidden backpack data for the On-Demand Buffer trigger
                         marker.deviceData = {
                             type: deviceType,
                             status: rawStatus,
@@ -473,56 +538,155 @@
         }
 
         // ==============================================================================
-        // NEW: SMOOTH ANIMATED ON-DEMAND 10KM BUFFER ZONE
+        // ANIMATED ON-DEMAND 10KM BUFFER ZONE
         // ==============================================================================
         map.on('popupopen', function(e) {
-            ewsBuffers.clearLayers(); // Clear any existing buffer first
+            ewsBuffers.clearLayers(); 
             
             if (e.popup && e.popup._source && e.popup._source.deviceData) {
                 var data = e.popup._source.deviceData;
-                
-                // Trigger animation if it's an ARG or TANDEM, and not Relocated
                 if ((data.type.includes('ARG') || data.type.includes('TANDEM')) && !data.status.includes('RELOCATION')) {
                     
-                    // 1. Create the circle starting at 0 radius
                     var animatedCircle = L.circle([data.lat, data.lng], {
-                        radius: 0, 
-                        color: '#0ea5e9', 
-                        weight: 1.5, 
-                        opacity: 0.5, 
-                        fillColor: '#0ea5e9',
-                        fillOpacity: 0.1, // 10% Transparency
-                        interactive: false 
+                        radius: 0, color: '#0ea5e9', weight: 1.5, opacity: 0.5, fillColor: '#0ea5e9', fillOpacity: 0.1, interactive: false 
                     }).addTo(ewsBuffers);
 
-                    // 2. Setup the smooth expansion animation
-                    var maxRadius = 10000; // 10,000 meters = 10km
-                    var duration = 400; // milliseconds
+                    var maxRadius = 10000; 
+                    var duration = 400; 
                     var startTime = null;
 
                     function animate(currentTime) {
                         if (!startTime) startTime = currentTime;
-                        var timeElapsed = currentTime - startTime;
-                        var progress = Math.min(timeElapsed / duration, 1);
-                        
-                        // EaseOut Cubic formula: makes it start fast and slow down elegantly
+                        var progress = Math.min((currentTime - startTime) / duration, 1);
                         var easeOutProgress = 1 - Math.pow(1 - progress, 3);
                         
                         animatedCircle.setRadius(maxRadius * easeOutProgress);
-                        
-                        if (progress < 1) {
-                            requestAnimationFrame(animate); // Keep animating until finished
-                        }
+                        if (progress < 1) requestAnimationFrame(animate); 
                     }
-                    requestAnimationFrame(animate); // Start the engine
+                    requestAnimationFrame(animate); 
                 }
             }
         });
 
-        // Hide buffer instantly when popup is closed
         map.on('popupclose', function() {
             ewsBuffers.clearLayers();
+            // Optional: Also auto-close the chart if they close the map popup
+            // window.closeChart(); 
         });
+
+        // ==============================================================================
+        // NEW: CHART.JS RENDERING ENGINE
+        // ==============================================================================
+        window.openChart = function(encodedKey) {
+            var historyKey = decodeURIComponent(encodedKey);
+            var dataObj = archivedDataMap[historyKey];
+            
+            if (!dataObj || dataObj.raw.length === 0) return;
+
+            // Sort data chronologically (Oldest to Newest) for the graph
+            var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
+
+            var labels = sortedData.map(d => d.timeStr);
+            var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
+            var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
+
+            // Update Panel UI Title
+            document.getElementById('chart-title').innerText = historyKey.replace('_', ' - ') + " (24H Trend)";
+            
+            // Slide Panel Up
+            document.getElementById('chart-panel').classList.add('open');
+
+            var ctx = document.getElementById('historyChart').getContext('2d');
+
+            // Destroy previous chart if it exists so we can draw a new one
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+            }
+
+            // Build Datasets dynamically based on what data exists
+            var datasets = [];
+            
+            if (wlData.some(d => d !== null)) {
+                datasets.push({
+                    label: 'Water Level (m)',
+                    data: wlData,
+                    borderColor: '#0284c7', // Slate Blue
+                    backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                    fill: true,
+                    tension: 0.4, // Curvy lines
+                    yAxisID: 'y'
+                });
+            }
+            
+            if (rgData.some(d => d !== null)) {
+                datasets.push({
+                    label: 'Rainfall (mm)',
+                    data: rgData,
+                    borderColor: '#0ea5e9', // Cyan
+                    backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                });
+            }
+
+            // Create the Line Chart
+            currentChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    color: '#cbd5e1',
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Meters (m)', color: '#0284c7', font: { size: 10, weight: 'bold'} },
+                            ticks: { color: '#0284c7' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: datasets.length > 1, // Only show right axis if we have 2 datasets
+                            position: 'right',
+                            title: { display: true, text: 'Millimeters (mm)', color: '#0ea5e9', font: { size: 10, weight: 'bold'} },
+                            ticks: { color: '#0ea5e9' },
+                            grid: { drawOnChartArea: false } // Prevents gridline overlapping
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f8fafc', font: { family: 'Inter', size: 12, weight: 'bold' } }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    }
+                }
+            });
+        }
+
+        window.closeChart = function() {
+            document.getElementById('chart-panel').classList.remove('open');
+        }
 
     </script>
 </body>
