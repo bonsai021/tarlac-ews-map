@@ -137,25 +137,53 @@
         .leaflet-control-zoom a { width: 26px !important; height: 26px !important; line-height: 26px !important; font-size: 14px !important; background-color: rgba(15, 23, 42, 0.85) !important; color: #cbd5e1 !important; border-color: rgba(255,255,255,0.1) !important; backdrop-filter: blur(4px); }
         .leaflet-control-zoom a:hover { background-color: rgba(30, 41, 59, 0.95) !important; color: white !important; }
         
-        /* Popup Styling */
+        /* Popup Styling - Widened for Horizontal Layout */
         .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); font-family: 'Inter', sans-serif; }
-        .leaflet-popup-content { margin: 14px; color: #1f2937; }
+        .leaflet-popup-content { margin: 14px; color: #1f2937; min-width: 250px; } /* Ensures popup is wider */
         
         .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 4px 8px; border-radius: 6px; margin-top: 6px; margin-bottom: 6px; font-size: 9px; font-family: monospace; color: #475569; display: flex; align-items: center; gap: 6px; }
 
-        /* --- History Log UI (METERS & MM ONLY) --- */
-        .history-container { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
-        .history-title { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
-        .history-log { max-height: 90px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 10px; color: #0f172a; }
-        .history-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
-        .history-item:last-child { border-bottom: none; }
-        .history-time { font-weight: 700; color: #64748b; font-size: 9px; }
-        .history-metrics { font-weight: 800; }
+        /* --- HORIZONTAL History Log UI --- */
+        .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+        .history-title { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
         
-        /* Custom scrollbar */
-        .history-log::-webkit-scrollbar { width: 4px; }
+        /* The horizontal scroll wrapper */
+        .history-log { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 8px; 
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 6px; 
+            padding: 8px; 
+            max-width: 100%;
+        }
+        
+        /* The individual time cards */
+        .history-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            flex: 0 0 auto; /* Prevent cards from shrinking */
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 6px 10px;
+            min-width: 60px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .history-time { font-weight: 700; color: #64748b; font-size: 9px; margin-bottom: 3px; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px; width: 100%; text-align: center; }
+        .history-metrics { font-weight: 800; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        
+        /* Custom horizontal scrollbar */
+        .history-log::-webkit-scrollbar { height: 6px; } /* Horizontal bar height */
         .history-log::-webkit-scrollbar-track { background: transparent; }
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     </style>
 </head>
@@ -249,6 +277,15 @@
             });
         }
 
+        function getMetric(row, keyword1, keyword2) {
+            let keys = Object.keys(row);
+            let targetKey = keys.find(k => k.toUpperCase().includes(keyword1) || (keyword2 && k.toUpperCase().includes(keyword2)));
+            if (targetKey && row[targetKey] && row[targetKey].trim() !== '') {
+                return row[targetKey];
+            }
+            return null;
+        }
+
         async function fetchAllData() {
             var [mainData, archiveData] = await Promise.all([
                 fetchCsvData(mainCsvUrl),
@@ -264,7 +301,6 @@
                 let row = archiveData[i];
                 let keys = Object.keys(row);
                 
-                // Grab timestamp (Assuming it's the last column added by your script)
                 let timestampStr = row['TIMESTAMP'] || row[keys[keys.length - 1]]; 
                 let recordDate = new Date(timestampStr);
 
@@ -272,27 +308,29 @@
                     let sensorName = row['LIST OF INSTRUMENT'];
                     if (!archivedHistoryMap[sensorName]) archivedHistoryMap[sensorName] = [];
                     
-                    // Extract exact numbers
-                    let wlStr = row['WATER_LEVEL_M'] ? row['WATER_LEVEL_M'].toString().trim() : '';
-                    let rgStr = row['RAINFALL_MM'] ? row['RAINFALL_MM'].toString().trim() : '';
+                    let rawWl = getMetric(row, 'WATER', 'COLUMN 6');
+                    let rawRg = getMetric(row, 'RAIN', 'COLUMN 7');
                     
-                    // ONLY save it to history if there is a number to show
-                    if (wlStr !== '' || rgStr !== '') {
-                        let metricsArray = [];
-                        
-                        if (wlStr !== '') {
-                            metricsArray.push(`<span style="color:#0284c7;">${wlStr}m</span>`);
-                        }
-                        if (rgStr !== '') {
-                            metricsArray.push(`<span style="color:#0ea5e9;">${rgStr}mm</span>`);
-                        }
-                        
+                    let wlVal = rawWl ? parseFloat(rawWl) : NaN;
+                    let rgVal = rawRg ? parseFloat(rawRg) : NaN;
+
+                    let metricsArray = [];
+                    
+                    // Stacking metrics cleanly for the horizontal cards
+                    if (!isNaN(wlVal)) {
+                        metricsArray.push(`<span style="color:#0284c7;">${wlVal}m</span>`);
+                    }
+                    if (!isNaN(rgVal)) {
+                        metricsArray.push(`<span style="color:#0ea5e9;">${rgVal}mm</span>`);
+                    }
+                    
+                    if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         
                         archivedHistoryMap[sensorName].push(`
                             <div class="history-item">
                                 <span class="history-time">${timeStr}</span>
-                                <span class="history-metrics">${metricsArray.join(' <span style="color:#cbd5e1; font-weight:400;">|</span> ')}</span>
+                                <span class="history-metrics">${metricsArray.join('')}</span>
                             </div>
                         `);
                     }
@@ -332,22 +370,27 @@
                         else if (rawStatus.includes('RELOCATION')) counts.reloc++;
                         if (deviceType.includes('FEWS')) counts.fews++;
 
-                        // Latest metrics for the top of the popup
                         var metricsHtml = "";
-                        if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && row['WATER_LEVEL_M']) {
-                            metricsHtml += `<b>Water Level:</b> <span style="color:#0284c7; font-weight:800;">${row['WATER_LEVEL_M']} m</span><br>`;
+                        
+                        let mainWl = getMetric(row, 'WATER', 'COLUMN 6');
+                        let mainRg = getMetric(row, 'RAIN', 'COLUMN 7');
+
+                        if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
+                            let cleanWl = parseFloat(mainWl);
+                            if (!isNaN(cleanWl)) metricsHtml += `<b>Water Level:</b> <span style="color:#0284c7; font-weight:800;">${cleanWl} m</span><br>`;
                         }
-                        if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && row['RAINFALL_MM']) {
-                            metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${row['RAINFALL_MM']} mm</span><br>`;
+                        if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
+                            let cleanRg = parseFloat(mainRg);
+                            if (!isNaN(cleanRg)) metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${cleanRg} mm</span><br>`;
                         }
 
-                        // Build the HTML for the 24-hour history box
+                        // Build HORIZONTAL history box HTML
                         var historyHtml = "";
                         if (archivedHistoryMap[sensorName] && archivedHistoryMap[sensorName].length > 0) {
                             historyHtml = `
                                 <div class="history-container">
                                     <div class="history-title">
-                                        <i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours Timeline
                                     </div>
                                     <div class="history-log">
                                         ${archivedHistoryMap[sensorName].join('')}
@@ -356,7 +399,6 @@
                             `;
                         }
 
-                        // Set Marker Icon
                         var isFews = deviceType.includes('FEWS');
                         var iconHtml = isFews 
                             ? `<div style="font-size: 16px; line-height: 1; margin-top: -1px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));">🚨</div>`
@@ -377,7 +419,6 @@
 
                         var marker = L.marker([lat, lng], { icon: customIcon });
 
-                        // Injecting everything into the Popup
                         marker.bindPopup(`
                             <div style="line-height:1.6; min-width: 180px;">
                                 <strong style="font-size:11px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:6px; border-bottom:2px solid #e2e8f0; padding-bottom:4px;">
@@ -397,7 +438,7 @@
                                 ${historyHtml}
 
                                 <div style="margin-top:8px; font-size:9px; color:#94a3b8; text-align:right;">
-                                    Updated: ${row['UPDATE:']}
+                                    Updated: ${row['UPDATE:'] || row['TIMESTAMP'] || ''}
                                 </div>
                             </div>
                         `).addTo(ewsMarkers);
@@ -405,7 +446,6 @@
                 }
             });
 
-            // Update UI Counters
             document.getElementById('statTotal').innerText = `${counts.total} Total`;
             document.getElementById('statUp').innerText = counts.up;
             document.getElementById('statDown').innerText = counts.down;
@@ -413,7 +453,6 @@
             document.getElementById('statReloc').innerText = counts.reloc;
             document.getElementById('statFews').innerText = counts.fews;
 
-            // Only zoom bounds once
             if (ewsMarkers.getLayers().length > 0 && !window.initialZoomDone) {
                 map.fitBounds(ewsMarkers.getBounds(), { padding: [50, 50] });
                 window.initialZoomDone = true;
