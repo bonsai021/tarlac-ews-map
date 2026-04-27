@@ -139,6 +139,17 @@
         .leaflet-control-zoom a { width: 26px !important; height: 26px !important; line-height: 26px !important; font-size: 14px !important; background-color: rgba(15, 23, 42, 0.85) !important; color: #cbd5e1 !important; border-color: rgba(255,255,255,0.1) !important; backdrop-filter: blur(4px); }
         .leaflet-control-zoom a:hover { background-color: rgba(30, 41, 59, 0.95) !important; color: white !important; }
         
+        /* --- NEW: SMOOTH POPUP ANIMATION --- */
+        @keyframes popupPopIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(15px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        .leaflet-popup {
+            animation: popupPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+            transform-origin: bottom center; /* Animates outward from the map pin */
+        }
+
         /* Popup Styling */
         .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); font-family: 'Inter', sans-serif; }
         .leaflet-popup-content { margin: 14px; color: #1f2937; min-width: 250px; } 
@@ -177,13 +188,13 @@
         }
         .btn-view-chart:hover { background: #0284c7; color: white; border-color: #0284c7; }
 
-        /* --- Bottom Slide-Up Chart Panel --- */
+        /* --- Bottom Slide-Up Chart Panel (Taller for Date/Time labels) --- */
         #chart-panel {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100vw;
-            height: 260px; 
+            height: 280px; 
             background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(12px);
             border-top: 1px solid rgba(255,255,255,0.1);
@@ -367,6 +378,8 @@
                     if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         
+                        let dateStr = recordDate.toLocaleDateString([], {month: 'short', day: 'numeric'});
+                        
                         archivedDataMap[historyKey].html.push(`
                             <div class="history-item">
                                 <span class="history-time">${timeStr}</span>
@@ -377,6 +390,7 @@
                         archivedDataMap[historyKey].raw.push({
                             timestamp: recordDate.getTime(),
                             timeStr: timeStr,
+                            dateStr: dateStr, 
                             wl: wlVal,
                             rg: rgVal
                         });
@@ -434,14 +448,11 @@
 
                         var historyKey = sensorName + "_" + deviceType; 
 
-                        // Build HORIZONTAL history box HTML + Scrubbed Chart Button
                         var historyHtml = "";
                         if (archivedDataMap[historyKey] && archivedDataMap[historyKey].html.length > 0) {
                             
                             let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
 
-                            // --- DATA SCRUBBER ---
-                            // Check if the history actually contains at least one valid number to graph
                             let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
                             
                             let chartBtnHtml = "";
@@ -566,12 +577,10 @@
 
         map.on('popupclose', function() {
             ewsBuffers.clearLayers();
-            // Optional: Auto-close the chart when popup closes
-            // window.closeChart(); 
         });
 
         // ==============================================================================
-        // CLEAN, SMOOTH CHART.JS RENDERING ENGINE
+        // UPGRADED CHART.JS RENDERING ENGINE 
         // ==============================================================================
         window.openChart = function(encodedKey) {
             var historyKey = decodeURIComponent(encodedKey);
@@ -581,7 +590,8 @@
 
             var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
 
-            var labels = sortedData.map(d => d.timeStr);
+            var labels = sortedData.map(d => [d.timeStr, d.dateStr]);
+            
             var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
             var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
 
@@ -637,6 +647,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: { bottom: 5 }
+                    },
                     color: '#cbd5e1',
                     interaction: {
                         mode: 'index',
@@ -644,7 +657,12 @@
                     },
                     scales: {
                         x: {
-                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 9 }, maxRotation: 0 },
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { family: 'Inter', size: 9 }, 
+                                maxRotation: 0, 
+                                autoSkipPadding: 20 
+                            },
                             grid: { display: false } 
                         },
                         y: {
@@ -669,12 +687,19 @@
                             labels: { color: '#f8fafc', font: { family: 'Inter', size: 11, weight: 'bold' } }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
                             titleFont: { family: 'Inter', size: 12 },
-                            bodyFont: { family: 'Inter', size: 11, weight: 'bold' },
-                            padding: 10,
+                            bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
+                            padding: 12,
                             cornerRadius: 8,
-                            displayColors: true
+                            displayColors: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    var index = tooltipItems[0].dataIndex;
+                                    var pointData = sortedData[index];
+                                    return pointData.dateStr + ' @ ' + pointData.timeStr;
+                                }
+                            }
                         }
                     }
                 }
