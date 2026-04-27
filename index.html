@@ -438,4 +438,38 @@
                                 </strong>
                                 <div style="font-size:12px; color:#334155;">
                                     <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Type:</span> ${deviceType}<br>
-                                    <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Status:</span> <span style="font-weight:700;
+                                    <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Status:</span> <span style="font-weight:700; color:${statusColor}">${row['Status']}</span><br>
+                                    
+                                    <div class="gps-box">
+                                        <i class="fa-solid fa-location-crosshairs" style="color:#94a3b8;"></i> 
+                                        ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                    </div>
+                                    ${metricsHtml}
+                                </div>
+                                
+                                ${historyHtml}
+
+                                <div style="margin-top:8px; font-size:9px; color:#94a3b8; text-align:right;">
+                                    Updated: ${row['UPDATE:'] || row['TIMESTAMP'] || ''}
+                                </div>
+                            </div>
+                        `).addTo(ewsMarkers);
+                    }
+                }
+            });
+
+            document.getElementById('statTotal').innerText = `${counts.total} Total`;
+            document.getElementById('statUp').innerText = counts.up;
+            document.getElementById('statDown').innerText = counts.down;
+            document.getElementById('statMaint').innerText = counts.maint;
+            document.getElementById('statReloc').innerText = counts.reloc;
+            document.getElementById('statFews').innerText = counts.fews;
+
+            if (ewsMarkers.getLayers().length > 0 && !window.initialZoomDone) {
+                map.fitBounds(ewsMarkers.getBounds(), { padding: [50, 50] });
+                window.initialZoomDone = true;
+            }
+        }
+    </script>
+</body>
+</html>
