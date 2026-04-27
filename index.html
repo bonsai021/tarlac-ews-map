@@ -48,7 +48,7 @@
             white-space: normal;
         }
 
-        /* --- NEW: Smooth Dropdown Filter --- */
+        /* Sensor Filter Dropdown */
         .filter-container {
             border-right: 1px solid rgba(255,255,255,0.2);
             padding-right: 15px;
@@ -70,7 +70,7 @@
             outline: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            appearance: none; /* Removes default OS arrow */
+            appearance: none; 
             -webkit-appearance: none;
             padding-right: 30px;
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
@@ -155,6 +155,22 @@
         .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); font-family: 'Inter', sans-serif; }
         .leaflet-popup-content { margin: 14px; color: #1f2937; }
         
+        /* NEW: GPS Coordinate Popup Box */
+        .gps-box {
+            background: rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 6px;
+            margin-bottom: 6px;
+            font-size: 9px;
+            font-family: monospace;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
     </style>
 </head>
 <body>
@@ -231,7 +247,6 @@
         var ewsMarkers = L.featureGroup().addTo(map);
         var csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; 
         
-        // NEW: Global array to hold the downloaded data for instant filtering
         var allDownloadedData = [];
 
         function getColor(status) {
@@ -250,7 +265,7 @@
 
         // Event Listener for Instant Filter Dropdown
         document.getElementById('sensorFilter').addEventListener('change', function() {
-            renderMapData(); // Re-render instantly without waiting for a new download
+            renderMapData(); 
         });
 
         function fetchData() {
@@ -260,17 +275,15 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     allDownloadedData = results.data;
-                    renderMapData(); // Render the fresh data
+                    renderMapData(); 
                 }
             });
         }
 
-        // NEW: Separated Rendering Logic to handle the dropdown filter instantly
         function renderMapData() {
             ewsMarkers.clearLayers();
             var counts = { total: 0, up: 0, down: 0, maint: 0, reloc: 0, fews: 0 };
             
-            // Get currently selected filter
             var activeFilter = document.getElementById('sensorFilter').value;
 
             allDownloadedData.forEach(function(row) {
@@ -281,7 +294,6 @@
                     var rawStatus = (row['Status'] || "").toUpperCase();
                     var deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "";
                     
-                    // --- Filtering Logic ---
                     var showMarker = false;
                     if (activeFilter === 'ALL') {
                         showMarker = true;
@@ -289,7 +301,6 @@
                         showMarker = deviceType.includes(activeFilter);
                     }
 
-                    // If the marker passes the filter, render it and add to counts
                     if (showMarker) {
                         counts.total++;
                         var statusColor = getColor(row['Status']);
@@ -309,7 +320,6 @@
                             metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${row['RAINFALL_MM']} mm</span><br>`;
                         }
 
-                        // Sensor-Specific Icons
                         var isFews = deviceType.includes('FEWS');
                         var iconHtml = "";
                         
@@ -341,6 +351,7 @@
 
                         var marker = L.marker([lat, lng], { icon: customIcon });
 
+                        // NEW: Added GPS Coordinate box directly into the popup
                         marker.bindPopup(`
                             <div style="line-height:1.6; min-width: 180px;">
                                 <strong style="font-size:11px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:6px; border-bottom:2px solid #e2e8f0; padding-bottom:4px;">
@@ -349,6 +360,12 @@
                                 <div style="font-size:12px; color:#334155;">
                                     <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Type:</span> ${row['DEVICE TYPE']}<br>
                                     <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Status:</span> <span style="font-weight:700; color:${statusColor}">${row['Status']}</span><br>
+                                    
+                                    <div class="gps-box">
+                                        <i class="fa-solid fa-location-crosshairs" style="color:#94a3b8;"></i> 
+                                        ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                    </div>
+                                    
                                     ${metricsHtml}
                                 </div>
                                 <div style="margin-top:8px; font-size:9px; color:#94a3b8; text-align:right;">
@@ -360,7 +377,6 @@
                 }
             });
 
-            // Dynamically Update Health Tally Based on the Filter
             document.getElementById('statTotal').innerText = `${counts.total} Total`;
             document.getElementById('statUp').innerText = counts.up;
             document.getElementById('statDown').innerText = counts.down;
@@ -368,7 +384,6 @@
             document.getElementById('statReloc').innerText = counts.reloc;
             document.getElementById('statFews').innerText = counts.fews;
 
-            // Only zoom to fit bounds on the very first load
             if (ewsMarkers.getLayers().length > 0 && !window.initialZoomDone) {
                 map.fitBounds(ewsMarkers.getBounds(), { padding: [50, 50] });
                 window.initialZoomDone = true;
