@@ -303,8 +303,14 @@
                 let recordDate = new Date(timestampStr);
 
                 if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
-                    let sensorName = row['LIST OF INSTRUMENT'];
-                    if (!archivedHistoryMap[sensorName]) archivedHistoryMap[sensorName] = [];
+                    let sensorName = row['LIST OF INSTRUMENT'] || "Unknown";
+                    let deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "UNKNOWN";
+                    
+                    // --- NEW TWO-FACTOR ID FIX ---
+                    // This creates a unique key (e.g. "BALANTI BRIDGE_FEWS") so duplicates don't share data
+                    let historyKey = sensorName + "_" + deviceType; 
+
+                    if (!archivedHistoryMap[historyKey]) archivedHistoryMap[historyKey] = [];
                     
                     let rawWl = getMetric(row, 'WATER', 'COLUMN 6');
                     let rawRg = getMetric(row, 'RAIN', 'COLUMN 7');
@@ -324,7 +330,7 @@
                     if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         
-                        archivedHistoryMap[sensorName].push(`
+                        archivedHistoryMap[historyKey].push(`
                             <div class="history-item">
                                 <span class="history-time">${timeStr}</span>
                                 <span class="history-metrics">${metricsArray.join('')}</span>
@@ -354,7 +360,7 @@
                 if (!isNaN(lat) && !isNaN(lng)) {
                     var rawStatus = (row['Status'] || "").toUpperCase();
                     var deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "";
-                    var sensorName = row['LIST OF INSTRUMENT'];
+                    var sensorName = row['LIST OF INSTRUMENT'] || "Unknown";
                     
                     var showMarker = (activeFilter === 'ALL') || deviceType.includes(activeFilter);
 
@@ -368,15 +374,15 @@
                         else if (rawStatus.includes('RELOCATION')) counts.reloc++;
                         if (deviceType.includes('FEWS')) counts.fews++;
 
-                        // --- Draw 10km Buffer for ARG/TANDEM (Ignores RELOCATION) ---
+                        // Draw 10km Buffer for ARG/TANDEM (Ignores RELOCATION)
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && !rawStatus.includes('RELOCATION')) {
                             L.circle([lat, lng], {
                                 radius: 10000, 
                                 color: '#0ea5e9', 
                                 weight: 1, 
-                                opacity: 0.3, // Softens the solid outer border
+                                opacity: 0.3, 
                                 fillColor: '#0ea5e9',
-                                fillOpacity: 0.05, // Super soft internal fill
+                                fillOpacity: 0.05, 
                                 interactive: false 
                             }).addTo(ewsBuffers);
                         }
@@ -395,16 +401,19 @@
                             if (!isNaN(cleanRg)) metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${cleanRg} mm</span><br>`;
                         }
 
+                        // --- NEW TWO-FACTOR ID FIX ---
+                        var historyKey = sensorName + "_" + deviceType; 
+
                         // Build HORIZONTAL history box HTML
                         var historyHtml = "";
-                        if (archivedHistoryMap[sensorName] && archivedHistoryMap[sensorName].length > 0) {
+                        if (archivedHistoryMap[historyKey] && archivedHistoryMap[historyKey].length > 0) {
                             historyHtml = `
                                 <div class="history-container">
                                     <div class="history-title">
                                         <i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours Timeline
                                     </div>
                                     <div class="history-log">
-                                        ${archivedHistoryMap[sensorName].join('')}
+                                        ${archivedHistoryMap[historyKey].join('')}
                                     </div>
                                 </div>
                             `;
