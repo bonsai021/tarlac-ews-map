@@ -83,7 +83,6 @@
             background-color: rgba(255, 255, 255, 0.1);
             border-color: #38bdf8;
         }
-
         .filter-container select option { background: #1e293b; color: white; }
 
         /* iOS-Style Theme Switch */
@@ -144,40 +143,13 @@
         
         .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 4px 8px; border-radius: 6px; margin-top: 6px; margin-bottom: 6px; font-size: 9px; font-family: monospace; color: #475569; display: flex; align-items: center; gap: 6px; }
 
-        /* --- NEW: History Log UI in Popup --- */
-        .history-container {
-            margin-top: 10px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 6px;
-        }
-        .history-title {
-            font-size: 9px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .history-log {
-            max-height: 80px;
-            overflow-y: auto;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 4px 6px;
-            font-size: 9px;
-            color: #475569;
-        }
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
+        /* History Log UI */
+        .history-container { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+        .history-title { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .history-log { max-height: 80px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; font-size: 9px; color: #475569; }
+        .history-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
         .history-item:last-child { border-bottom: none; }
-        .history-time { font-weight: 700; color: #3b82f6; }
-        
-        /* Custom scrollbar for history log */
+        .history-time { font-weight: 700; color: #64748b; }
         .history-log::-webkit-scrollbar { width: 4px; }
         .history-log::-webkit-scrollbar-track { background: transparent; }
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -241,13 +213,13 @@
         var ewsMarkers = L.featureGroup().addTo(map);
         
         // ==========================================
-        // ADD YOUR TWO CSV LINKS HERE
+        // PASTE YOUR CSV LINKS HERE
         // ==========================================
         var mainCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; 
-        var archiveCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?gid=1557794138&single=true&output=csv'; // <--- PASTE ARCHIVE LINK HERE
+        var archiveCsvUrl = 'YOUR_NEW_ARCHIVE_CSV_LINK_HERE'; // <--- PASTE ARCHIVE LINK HERE
         
         var allDownloadedData = [];
-        var archivedHistoryMap = {}; // Will store the last 24h of data per sensor
+        var archivedHistoryMap = {}; 
 
         function getColor(status) {
             if (!status) return '#475569'; 
@@ -259,7 +231,6 @@
             return '#3b82f6'; 
         }
 
-        // Helper function to fetch CSV data cleanly
         function fetchCsvData(url) {
             return new Promise((resolve) => {
                 Papa.parse(url, {
@@ -267,30 +238,25 @@
                     header: true,
                     skipEmptyLines: true,
                     complete: function(results) { resolve(results.data); },
-                    error: function() { resolve([]); } // Fail gracefully if link is missing
+                    error: function() { resolve([]); } 
                 });
             });
         }
 
-        // The New Data Engine
         async function fetchAllData() {
-            // Download both sheets at the exact same time
             var [mainData, archiveData] = await Promise.all([
                 fetchCsvData(mainCsvUrl),
                 fetchCsvData(archiveCsvUrl)
             ]);
 
             allDownloadedData = mainData;
-            
-            // --- Process Archive Data for the last 24 Hours ---
             archivedHistoryMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
 
-            // Read the archive backwards (newest to oldest)
+            // Process Archive Data (Metrics Only)
             for (let i = archiveData.length - 1; i >= 0; i--) {
                 let row = archiveData[i];
                 let keys = Object.keys(row);
-                // The script added the timestamp to the very last column
                 let timestampStr = row[keys[keys.length - 1]]; 
                 let recordDate = new Date(timestampStr);
 
@@ -298,27 +264,35 @@
                     let sensorName = row['LIST OF INSTRUMENT'];
                     if (!archivedHistoryMap[sensorName]) archivedHistoryMap[sensorName] = [];
                     
-                    // Format history entry
-                    let wl = row['WATER_LEVEL_M'] ? `${row['WATER_LEVEL_M']}m ` : '';
-                    let rg = row['RAINFALL_MM'] ? `${row['RAINFALL_MM']}mm ` : '';
-                    let metrics = (wl + rg).trim();
-                    let displayMetrics = metrics !== "" ? `(${metrics})` : "";
+                    // Safely extract just the numbers/metrics
+                    let wlStr = row['WATER_LEVEL_M'] ? row['WATER_LEVEL_M'].toString().trim() : '';
+                    let rgStr = row['RAINFALL_MM'] ? row['RAINFALL_MM'].toString().trim() : '';
                     
-                    let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    
-                    archivedHistoryMap[sensorName].push(`
-                        <div class="history-item">
-                            <span class="history-time">${timeStr}</span>
-                            <span>${row['Status']} <span style="font-weight:700; color:#0f172a;">${displayMetrics}</span></span>
-                        </div>
-                    `);
+                    // ONLY create a history log if there are actual measurements to show
+                    if (wlStr !== '' || rgStr !== '') {
+                        let metricsArray = [];
+                        
+                        if (wlStr !== '') {
+                            metricsArray.push(`<span style="color:#0284c7; font-weight:800;">WL: ${wlStr}m</span>`);
+                        }
+                        if (rgStr !== '') {
+                            metricsArray.push(`<span style="color:#0ea5e9; font-weight:800;">Rain: ${rgStr}mm</span>`);
+                        }
+                        
+                        let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
+                        archivedHistoryMap[sensorName].push(`
+                            <div class="history-item">
+                                <span class="history-time">${timeStr}</span>
+                                <span>${metricsArray.join(' <span style="color:#cbd5e1;">|</span> ')}</span>
+                            </div>
+                        `);
+                    }
                 }
             }
-
             renderMapData(); 
         }
 
-        // Initial fetch and automatic refresh every 60 seconds
         fetchAllData();
         setInterval(fetchAllData, 60000); 
 
@@ -358,12 +332,12 @@
                             metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${row['RAINFALL_MM']} mm</span><br>`;
                         }
 
-                        // Check if we have history for this sensor
+                        // Render History HTML if metrics exist
                         var historyHtml = "";
                         if (archivedHistoryMap[sensorName] && archivedHistoryMap[sensorName].length > 0) {
                             historyHtml = `
                                 <div class="history-container">
-                                    <div class="history-title"><i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours</div>
+                                    <div class="history-title"><i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours (Metrics)</div>
                                     <div class="history-log">
                                         ${archivedHistoryMap[sensorName].join('')}
                                     </div>
