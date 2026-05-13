@@ -126,9 +126,17 @@
         .dot-reloc { background: #8b5cf6; }   
         .dot-fews { font-size: 14px; line-height: 1; margin-right: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); } 
 
+        /* --- WATER LEVEL ALERT BADGES --- */
+        .alert-badge { color: white; font-size: 8px; font-weight: 800; padding: 3px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .level-normal { background-color: #10b981; }
+        .level-alert { background-color: #facc15; color: #0f172a; }
+        .level-warning { background-color: #f97316; }
+        .level-critical { background-color: #ef4444; }
+        .level-severe { background-color: #7f1d1d; animation: pulse-fews 1s infinite; }
+
         /* --- Custom Map Markers --- */
         .custom-leaflet-icon { background: none; border: none; }
-        .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease; z-index: 1000; }
+        .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.3s ease; z-index: 1000; }
         .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
 
         @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -200,7 +208,7 @@
         #chart-panel.open { transform: translateY(0); }
         
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .chart-title { font-size: 13px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-title { font-size: 13px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
         
         .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .chart-close:hover { background: #ef4444; color: white; }
@@ -448,6 +456,23 @@
             return '#3b82f6'; 
         }
 
+        // ==============================================================================
+        // NEW EWS WATER LEVEL ALERT LOGIC
+        // ==============================================================================
+        function getWlStatus(wl) {
+            if (wl < 1.0) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
+            if (wl < 3.0) return { class: 'level-alert', text: 'ALERT (LEVEL 1)', color: '#facc15' }; 
+            if (wl < 5.0) return { class: 'level-warning', text: 'WARNING (LEVEL 2)', color: '#f97316' }; 
+            if (wl <= 7.0) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
+            return { class: 'level-severe', text: 'SEVERE FLOODING', color: '#7f1d1d' }; 
+        }
+
+        // Helper to convert hex color to rgba for the chart background
+        function hexToRgba(hex, alpha) {
+            var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         function fetchCsvData(url) {
             return new Promise((resolve) => {
                 Papa.parse(url, {
@@ -562,21 +587,35 @@
                         counts.total++;
                         var statusColor = getColor(row['Status']);
                         
+                        var isFews = deviceType.includes('FEWS');
+                        var pulseClass = isFews ? 'marker-fews' : '';
+                        
                         if (rawStatus.includes('UP')) counts.up++;
                         else if (rawStatus.includes('DOWN')) counts.down++;
                         else if (rawStatus.includes('MAINTENANCE')) counts.maint++;
                         else if (rawStatus.includes('RELOCATION')) counts.reloc++;
-                        if (deviceType.includes('FEWS')) counts.fews++;
+                        if (isFews) counts.fews++;
 
                         var metricsHtml = "";
                         
                         let mainWl = getMetric(row, 'WATER', 'COLUMN 6');
                         let mainRg = getMetric(row, 'RAIN', 'COLUMN 7');
 
+                        // Evaluate Water Level Logic
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
                             let cleanWl = parseFloat(mainWl);
-                            if (!isNaN(cleanWl)) metricsHtml += `<b>Water Level:</b> <span style="color:#0284c7; font-weight:800;">${cleanWl} m</span><br>`;
+                            if (!isNaN(cleanWl)) {
+                                let wlStat = getWlStatus(cleanWl);
+                                metricsHtml += `<b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:800;">${cleanWl} m</span> <span class="alert-badge ${wlStat.class}">${wlStat.text}</span><br>`;
+                                
+                                // Make Marker Pulse & Change Color if Danger Level is Reached
+                                if (cleanWl >= 1.0 && rawStatus.includes('UP')) {
+                                    statusColor = wlStat.color;
+                                    pulseClass = 'marker-fews'; 
+                                }
+                            }
                         }
+                        
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
                             let cleanRg = parseFloat(mainRg);
                             if (!isNaN(cleanRg)) metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${cleanRg} mm</span><br>`;
@@ -614,7 +653,6 @@
                             `;
                         }
 
-                        var isFews = deviceType.includes('FEWS');
                         var iconHtml = isFews 
                             ? `<div style="font-size: 16px; line-height: 1; margin-top: -1px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));">🚨</div>`
                             : (deviceType.includes('TANDEM') ? `<i class="fa-solid fa-cloud-showers-water" style="font-size: 12px;"></i>` 
@@ -623,7 +661,6 @@
                             : `<i class="fa-solid fa-satellite-dish" style="font-size: 12px;"></i>`)));
 
                         var markerSize = isFews ? 30 : 26;
-                        var pulseClass = isFews ? 'marker-fews' : '';
 
                         var customIcon = L.divIcon({
                             html: `<div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
@@ -733,7 +770,18 @@
             var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
             var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
 
-            document.getElementById('chart-title').innerText = historyKey.replace('_', ' - ') + " (24H Trend)";
+            // Determine dynamic Chart Colors based on the most recent Water Level
+            var latestWl = wlData.slice().reverse().find(d => d !== null);
+            var wlColor = '#0284c7'; // Default blue
+            var wlBadgeHtml = '';
+
+            if (latestWl !== undefined && latestWl !== null) {
+                let stat = getWlStatus(latestWl);
+                wlColor = stat.color;
+                wlBadgeHtml = ` <span class="alert-badge ${stat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${stat.text}</span>`;
+            }
+
+            document.getElementById('chart-title').innerHTML = historyKey.replace('_', ' - ') + " (24H Trend)" + wlBadgeHtml;
             document.getElementById('chart-panel').classList.add('open');
 
             var ctx = document.getElementById('historyChart').getContext('2d');
@@ -748,8 +796,8 @@
                 datasets.push({
                     label: 'Water Level (m)',
                     data: wlData,
-                    borderColor: '#0284c7', 
-                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                    borderColor: wlColor, 
+                    backgroundColor: hexToRgba(wlColor, 0.15),
                     borderWidth: 2,
                     pointRadius: 0, 
                     pointHoverRadius: 6,
@@ -807,8 +855,8 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
-                            title: { display: true, text: 'Meters (m)', color: '#0284c7', font: { size: 10, weight: 'bold'} },
-                            ticks: { color: '#0284c7' },
+                            title: { display: true, text: 'Meters (m)', color: wlColor, font: { size: 10, weight: 'bold'} },
+                            ticks: { color: wlColor },
                             grid: { color: 'rgba(255,255,255,0.05)' }
                         },
                         y1: {
