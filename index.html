@@ -132,15 +132,12 @@
         .level-alert { background-color: #facc15; color: #0f172a; }
         .level-warning { background-color: #f97316; }
         .level-critical { background-color: #ef4444; }
-        .level-severe { background-color: #7f1d1d; animation: pulse-fews 1s infinite; }
+        .level-severe { background-color: #7f1d1d; }
 
         /* --- Custom Map Markers --- */
         .custom-leaflet-icon { background: none; border: none; }
         .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.3s ease; z-index: 1000; }
         .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
-
-        @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .marker-fews { animation: pulse-fews 2s infinite; }
 
         /* Leaflet Controls */
         .leaflet-control-zoom { border: none !important; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; opacity: 0.8; margin-top: 15px !important; margin-left: 15px !important; }
@@ -602,7 +599,6 @@
                         var statusColor = getColor(row['Status']);
                         
                         var isFews = deviceType.includes('FEWS');
-                        var pulseClass = isFews ? 'marker-fews' : '';
                         
                         if (rawStatus.includes('UP')) counts.up++;
                         else if (rawStatus.includes('DOWN')) counts.down++;
@@ -622,19 +618,29 @@
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
                             let cleanWl = parseFloat(mainWl);
                             if (!isNaN(cleanWl)) {
-                                // PASS THE SENSOR NAME HERE to check the custom dictionary
+                                let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
                                 let wlStat = getWlStatus(cleanWl, sensorName);
                                 
                                 currentWlColor = wlStat.color;
                                 currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${wlStat.text}</span>`;
                                 metricsHtml += `<b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:800;">${cleanWl} m</span> <span class="alert-badge ${wlStat.class}">${wlStat.text}</span><br>`;
                                 
-                                // Make Marker Pulse & Change Color if Danger Level is Reached
-                                // (It pulses if it is anything above normal)
+                                // Add threshold info block inside the map popup
+                                metricsHtml += `
+                                    <div style="font-size: 9.5px; color: #64748b; margin-top: 8px; margin-bottom: 4px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); line-height: 1.4;">
+                                        <strong style="color: #475569;">THRESHOLDS (m):</strong><br>
+                                        Norm: &lt;${t.alert} &nbsp;|&nbsp; 
+                                        <span style="color:#d97706">Alert: ${t.alert}</span> &nbsp;|&nbsp; 
+                                        <span style="color:#ea580c">Warn: ${t.warning}</span><br>
+                                        <span style="color:#dc2626">Crit: ${t.critical}</span> &nbsp;|&nbsp; 
+                                        <span style="color:#991b1b">Sev: &gt;${t.severe}</span>
+                                    </div>
+                                `;
+
+                                // Change marker color if Danger Level is Reached
                                 let defaultAlertLevel = sensorThresholds[sensorName] ? sensorThresholds[sensorName].alert : sensorThresholds['DEFAULT'].alert;
                                 if (cleanWl >= defaultAlertLevel && rawStatus.includes('UP')) {
                                     statusColor = wlStat.color;
-                                    pulseClass = 'marker-fews'; 
                                 }
                             }
                         }
@@ -690,7 +696,7 @@
                         var markerSize = isFews ? 30 : 26;
 
                         var customIcon = L.divIcon({
-                            html: `<div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
+                            html: `<div class="map-marker" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
                             className: 'custom-leaflet-icon',
                             iconSize: [markerSize, markerSize],
                             iconAnchor: [markerSize / 2, markerSize / 2]
@@ -791,13 +797,15 @@
 
             var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
 
-            // Stacked Array creates a multi-line X-Axis label (Time on top, Date on bottom)
+            // Extract sensor name to get correct threshold lines for the chart
+            var lastUnderscoreIndex = historyKey.lastIndexOf('_');
+            var sensorNameOnly = historyKey.substring(0, lastUnderscoreIndex);
+            var t = sensorThresholds[sensorNameOnly] || sensorThresholds['DEFAULT'];
+
             var labels = sortedData.map(d => [d.timeStr, d.dateStr]);
-            
             var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
             var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
 
-            // Determine dynamic Chart Colors based on the MAIN data instead of the archive array
             var wlColor = dataObj.currentWlColor || '#0284c7'; 
             var wlBadgeHtml = dataObj.currentWlBadgeHtml || '';
 
@@ -826,6 +834,11 @@
                     tension: 0.45, 
                     yAxisID: 'y'
                 });
+
+                // Add threshold lines as separate non-filled datasets
+                datasets.push({ label: 'Alert Line', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Warning Line', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Critical Line', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
             }
             
             if (rgData.some(d => d !== null)) {
@@ -881,7 +894,7 @@
                         },
                         y1: {
                             type: 'linear',
-                            display: datasets.length > 1, 
+                            display: datasets.length > 1 && rgData.some(d => d !== null), 
                             position: 'right',
                             title: { display: true, text: 'Millimeters (mm)', color: '#0ea5e9', font: { size: 10, weight: 'bold'} },
                             ticks: { color: '#0ea5e9' },
@@ -890,7 +903,7 @@
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#f8fafc', font: { family: 'Inter', size: 11, weight: 'bold' } }
+                            labels: { color: '#f8fafc', font: { family: 'Inter', size: 11, weight: 'bold' }, usePointStyle: true, boxWidth: 8 }
                         },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
