@@ -242,36 +242,6 @@
             transform: translateY(-2px);
         }
 
-        /* --- Bottom Slide-Up Chart Panel --- */
-        #chart-panel {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            height: 280px; 
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            z-index: 2000;
-            transform: translateY(100%); 
-            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-            padding: 15px 25px;
-            box-sizing: border-box;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-        }
-        #chart-panel.open { transform: translateY(0); }
-        
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .chart-title { font-size: 13px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-        
-        .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .chart-close:hover { background: #ef4444; color: white; }
-        
-        .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
-
         /* --- Map Legend Panel --- */
         .legend-panel {
             position: absolute;
@@ -408,6 +378,32 @@
             background-color: #1e293b; 
         }
 
+        /* --- Center Pop-out Chart Modal --- */
+        .chart-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
+            z-index: 4000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .chart-modal-overlay.open { display: flex; opacity: 1; }
+        
+        .chart-modal-content {
+            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; padding: 20px 25px; width: 90%; max-width: 1000px; height: 75vh;
+            color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+            transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex; flex-direction: column;
+        }
+        .chart-modal-overlay.open .chart-modal-content { transform: scale(1) translateY(0); }
+        
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+        .chart-title { font-size: 14px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+        
+        .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .chart-close:hover { background: #ef4444; color: white; }
+        
+        .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
+
     </style>
 </head>
 <body>
@@ -488,13 +484,16 @@
 
     <div id="map"></div>
 
-    <div id="chart-panel">
-        <div class="chart-header">
-            <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
-            <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="chart-container">
-            <canvas id="historyChart"></canvas>
+    <!-- Center Pop-out Chart Modal -->
+    <div id="chartModalOverlay" class="chart-modal-overlay" onclick="window.closeChart()">
+        <div class="chart-modal-content" onclick="event.stopPropagation()">
+            <div class="chart-header">
+                <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
+                <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chart-container">
+                <canvas id="historyChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -648,6 +647,7 @@
                     
                     if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
                         let dateStr = recordDate.toLocaleDateString([], {month: 'short', day: 'numeric'});
                         
                         archivedDataMap[historyKey].html.push(`
@@ -776,7 +776,7 @@
                             if (hasChartData) {
                                 chartBtnHtml = `
                                     <button class="btn-view-chart" onclick="window.openChart('${safeKey}')">
-                                        <i class="fa-solid fa-chart-line"></i> VIEW WATER THRESHOLD CHART
+                                        <i class="fa-solid fa-chart-line"></i> VIEW 24H TREND
                                     </button>
                                 `;
                             }
@@ -940,7 +940,7 @@
             var wlBadgeHtml = dataObj.currentWlBadgeHtml || '';
 
             document.getElementById('chart-title').innerHTML = historyKey.replace('_', ' - ') + " (24H Trend)" + wlBadgeHtml;
-            document.getElementById('chart-panel').classList.add('open');
+            document.getElementById('chartModalOverlay').classList.add('open');
 
             var ctx = document.getElementById('historyChart').getContext('2d');
 
@@ -1056,7 +1056,7 @@
         }
 
         window.closeChart = function() {
-            document.getElementById('chart-panel').classList.remove('open');
+            document.getElementById('chartModalOverlay').classList.remove('open');
         }
 
         // ==============================================================================
