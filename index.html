@@ -126,13 +126,26 @@
         .dot-reloc { background: #8b5cf6; }   
         .dot-fews { font-size: 14px; line-height: 1; margin-right: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); } 
 
-        /* --- WATER LEVEL ALERT BADGES --- */
+        /* --- WATER LEVEL ALERT BADGES & PULSES --- */
         .alert-badge { color: white; font-size: 8px; font-weight: 800; padding: 3px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .level-normal { background-color: #10b981; }
         .level-alert { background-color: #facc15; color: #0f172a; }
         .level-warning { background-color: #f97316; }
         .level-critical { background-color: #ef4444; }
         .level-severe { background-color: #7f1d1d; }
+
+        /* Custom Animations for Water Danger Levels */
+        @keyframes pulse-level-alert { 0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); } }
+        @keyframes pulse-level-warning { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
+        @keyframes pulse-level-critical { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes pulse-level-severe { 0% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(127, 29, 29, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0); } }
+
+        .pulse-level-alert { animation: pulse-level-alert 2s infinite; z-index: 1001 !important; }
+        .pulse-level-warning { animation: pulse-level-warning 1.5s infinite; z-index: 1001 !important; }
+        .pulse-level-critical { animation: pulse-level-critical 1s infinite; z-index: 1002 !important; }
+        .pulse-level-severe { animation: pulse-level-severe 0.5s infinite; z-index: 1002 !important; }
+
+        @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
         /* --- Custom Map Markers --- */
         .custom-leaflet-icon { background: none; border: none; }
@@ -270,6 +283,7 @@
             color: white;
             font-size: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: relative; /* Needed to anchor the notification badge */
         }
 
         .legend-icon.fews-icon {
@@ -282,6 +296,26 @@
             margin-left: 2px;
             margin-right: 4px;
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        }
+
+        /* Legend Notification Badge */
+        .legend-notification {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #0f172a;
+            animation: pulse-level-critical 2s infinite;
+            display: none; /* Hidden by default */
         }
 
         .legend-label {
@@ -365,11 +399,14 @@
         <div class="health-stat" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;"><div class="stat-label"><span class="dot-fews">🚨</span> FEWS SIRENS</div><div class="stat-value" id="statFews" style="color: #cbd5e1;">0</div></div>
     </div>
 
-    <!-- Clickable Legend Panel -->
+    <!-- Clickable Legend Panel with Notification Badges -->
     <div class="legend-panel" id="legendPanel">
         <h3>Sensor Types</h3>
         <div class="legend-item" onclick="openInfoModal('WLMS')">
-            <div class="legend-icon"><i class="fa-solid fa-water"></i></div>
+            <div class="legend-icon">
+                <i class="fa-solid fa-water"></i>
+                <div id="wlms-badge" class="legend-notification">!</div>
+            </div>
             <div class="legend-label">WLMS</div>
         </div>
         <div class="legend-item" onclick="openInfoModal('ARG')">
@@ -377,7 +414,10 @@
             <div class="legend-label">ARG</div>
         </div>
         <div class="legend-item" onclick="openInfoModal('TANDEM')">
-            <div class="legend-icon"><i class="fa-solid fa-cloud-showers-water"></i></div>
+            <div class="legend-icon">
+                <i class="fa-solid fa-cloud-showers-water"></i>
+                <div id="tandem-badge" class="legend-notification">!</div>
+            </div>
             <div class="legend-label">TANDEM</div>
         </div>
         <div class="legend-item" onclick="openInfoModal('FEWS')">
@@ -472,10 +512,10 @@
             let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
 
             if (wl < t.alert) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
-            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT (LEVEL 1)', color: '#facc15' }; 
-            if (wl < t.critical) return { class: 'level-warning', text: 'WARNING (LEVEL 2)', color: '#f97316' }; 
+            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT', color: '#facc15' }; 
+            if (wl < t.critical) return { class: 'level-warning', text: 'WARNING', color: '#f97316' }; 
             if (wl <= t.severe) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
-            return { class: 'level-severe', text: 'SEVERE FLOODING', color: '#7f1d1d' }; 
+            return { class: 'level-severe', text: 'SEVERE', color: '#7f1d1d' }; 
         }
 
         // Helper to convert hex color to rgba for the chart background
@@ -581,6 +621,10 @@
             ewsMarkers.clearLayers();
             ewsBuffers.clearLayers(); 
             var counts = { total: 0, up: 0, down: 0, maint: 0, reloc: 0, fews: 0 };
+            
+            // Track alerts for the Legend badges
+            var alertCounts = { wlms: 0, tandem: 0 };
+
             var activeFilter = document.getElementById('sensorFilter').value;
 
             allDownloadedData.forEach(function(row) {
@@ -599,6 +643,7 @@
                         var statusColor = getColor(row['Status']);
                         
                         var isFews = deviceType.includes('FEWS');
+                        var pulseClass = ''; 
                         
                         if (rawStatus.includes('UP')) counts.up++;
                         else if (rawStatus.includes('DOWN')) counts.down++;
@@ -625,22 +670,25 @@
                                 currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${wlStat.text}</span>`;
                                 metricsHtml += `<b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:800;">${cleanWl} m</span> <span class="alert-badge ${wlStat.class}">${wlStat.text}</span><br>`;
                                 
-                                // Add threshold info block inside the map popup
+                                // Plain English Threshold Guide inside the map popup
                                 metricsHtml += `
-                                    <div style="font-size: 9.5px; color: #64748b; margin-top: 8px; margin-bottom: 4px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); line-height: 1.4;">
-                                        <strong style="color: #475569;">THRESHOLDS (m):</strong><br>
-                                        Norm: &lt;${t.alert} &nbsp;|&nbsp; 
-                                        <span style="color:#d97706">Alert: ${t.alert}</span> &nbsp;|&nbsp; 
-                                        <span style="color:#ea580c">Warn: ${t.warning}</span><br>
-                                        <span style="color:#dc2626">Crit: ${t.critical}</span> &nbsp;|&nbsp; 
-                                        <span style="color:#991b1b">Sev: &gt;${t.severe}</span>
+                                    <div style="font-size: 10px; color: #64748b; margin-top: 8px; margin-bottom: 4px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); line-height: 1.5;">
+                                        <strong style="color: #475569;"><i class="fa-solid fa-circle-info"></i> Water Status Guide:</strong><br>
+                                        &bull; Normal: Up to ${t.alert}m<br>
+                                        &bull; <span style="color:#d97706; font-weight:600;">Alert: ${t.alert}m to ${t.warning}m</span><br>
+                                        &bull; <span style="color:#ea580c; font-weight:600;">Warning: ${t.warning}m to ${t.critical}m</span><br>
+                                        &bull; <span style="color:#dc2626; font-weight:600;">Critical: ${t.critical}m to ${t.severe}m</span><br>
+                                        &bull; <span style="color:#991b1b; font-weight:600;">Severe: Above ${t.severe}m</span>
                                     </div>
                                 `;
 
-                                // Change marker color if Danger Level is Reached
-                                let defaultAlertLevel = sensorThresholds[sensorName] ? sensorThresholds[sensorName].alert : sensorThresholds['DEFAULT'].alert;
-                                if (cleanWl >= defaultAlertLevel && rawStatus.includes('UP')) {
+                                // Make Marker Pulse & track Legend Alert if Danger Level is Reached
+                                if (cleanWl >= t.alert && rawStatus.includes('UP')) {
                                     statusColor = wlStat.color;
+                                    pulseClass = 'pulse-' + wlStat.class; // dynamically attach correct pulse speed/color
+                                    
+                                    if (deviceType.includes('WLMS')) alertCounts.wlms++;
+                                    if (deviceType.includes('TANDEM')) alertCounts.tandem++;
                                 }
                             }
                         }
@@ -696,7 +744,7 @@
                         var markerSize = isFews ? 30 : 26;
 
                         var customIcon = L.divIcon({
-                            html: `<div class="map-marker" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
+                            html: `<div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
                             className: 'custom-leaflet-icon',
                             iconSize: [markerSize, markerSize],
                             iconAnchor: [markerSize / 2, markerSize / 2]
@@ -737,6 +785,23 @@
                     }
                 }
             });
+
+            // Update Legend Notification Badges
+            var wlmsBadge = document.getElementById('wlms-badge');
+            if (alertCounts.wlms > 0) {
+                wlmsBadge.style.display = 'flex';
+                wlmsBadge.innerText = alertCounts.wlms;
+            } else {
+                wlmsBadge.style.display = 'none';
+            }
+
+            var tandemBadge = document.getElementById('tandem-badge');
+            if (alertCounts.tandem > 0) {
+                tandemBadge.style.display = 'flex';
+                tandemBadge.innerText = alertCounts.tandem;
+            } else {
+                tandemBadge.style.display = 'none';
+            }
 
             document.getElementById('statTotal').innerText = `${counts.total} Total`;
             document.getElementById('statUp').innerText = counts.up;
@@ -835,7 +900,7 @@
                     yAxisID: 'y'
                 });
 
-                // Add threshold lines as separate non-filled datasets
+                // Add threshold lines as separate non-filled datasets so you can see when water is getting close
                 datasets.push({ label: 'Alert Line', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
                 datasets.push({ label: 'Warning Line', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
                 datasets.push({ label: 'Critical Line', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
