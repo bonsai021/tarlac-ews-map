@@ -966,9 +966,9 @@
                 });
 
                 // Add threshold lines as separate non-filled datasets so you can see when water is getting close
-                datasets.push({ label: 'Alert Line', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Warning Line', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Critical Line', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Alert Level', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Warning Level', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Critical Level', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
             }
             
             if (rgData.some(d => d !== null)) {
@@ -1033,7 +1033,12 @@
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#f8fafc', font: { family: 'Inter', size: 11, weight: 'bold' }, usePointStyle: true, boxWidth: 8 }
+                            labels: { 
+                                color: '#f8fafc', 
+                                font: { family: 'Inter', size: 11, weight: 'bold' }, 
+                                boxWidth: 24, 
+                                boxHeight: 2 
+                            }
                         },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
