@@ -388,7 +388,7 @@
         .chart-modal-overlay.open { display: flex; opacity: 1; }
         
         .chart-modal-content {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px; padding: 20px 25px; width: 90%; max-width: 1000px; height: 75vh;
             color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.6);
             transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1042,16 +1042,31 @@
                         },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                            titleFont: { family: 'Inter', size: 12 },
-                            bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
-                            padding: 12,
-                            cornerRadius: 8,
+                            titleColor: '#94a3b8',
+                            bodyColor: '#f8fafc',
+                            borderColor: 'rgba(255, 255, 255, 0.15)',
+                            borderWidth: 1,
+                            padding: 16,
+                            cornerRadius: 12,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            titleFont: { family: 'Inter', size: 11, weight: '800' },
+                            bodyFont: { family: 'Inter', size: 13, weight: '700' },
+                            titleMarginBottom: 10,
+                            bodySpacing: 8,
                             displayColors: true,
+                            filter: function(tooltipItem) {
+                                // Hide the static threshold lines from the tooltip hover box for a cleaner look
+                                return tooltipItem.dataset.label === 'Water Level (m)' || tooltipItem.dataset.label === 'Rainfall (mm)';
+                            },
                             callbacks: {
                                 title: function(tooltipItems) {
                                     var index = tooltipItems[0].dataIndex;
                                     var pointData = sortedData[index];
-                                    return pointData.dateStr + ' @ ' + pointData.timeStr;
+                                    return pointData.dateStr + ' • ' + pointData.timeStr;
+                                },
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
                                 }
                             }
                         }
