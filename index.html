@@ -184,20 +184,27 @@
         
         .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 4px 8px; border-radius: 6px; margin-top: 6px; margin-bottom: 6px; font-size: 9px; font-family: monospace; color: #475569; display: flex; align-items: center; gap: 6px; }
 
-        /* --- HORIZONTAL History Log UI --- */
+        /* --- HORIZONTAL History Log UI (With Dynamic Glows) --- */
         .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
         .history-title { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
         
         .history-log { 
             display: flex; flex-direction: row; gap: 8px; overflow-x: auto; overflow-y: hidden; 
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; max-width: 100%;
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 8px; max-width: 100%;
         }
         
         .history-item { 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 0 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px;
+            flex: 0 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;
             padding: 6px 10px; min-width: 60px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
+
+        /* Dynamic Glows for History Timeline */
+        .history-item.glow-alert { border-color: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.6); background: rgba(250, 204, 21, 0.05); }
+        .history-item.glow-warning { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.6); background: rgba(249, 115, 22, 0.05); }
+        .history-item.glow-critical { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.05); }
+        .history-item.glow-severe { border-color: #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.8); background: rgba(127, 29, 29, 0.1); }
         
         .history-time { font-weight: 700; color: #64748b; font-size: 9px; margin-bottom: 3px; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px; width: 100%; text-align: center; }
         .history-metrics { font-weight: 800; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -207,14 +214,33 @@
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* --- View Chart Button --- */
+        /* --- View Chart Button (Updated Theme) --- */
         .btn-view-chart {
-            width: 100%; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1;
-            padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 800;
-            text-transform: uppercase; cursor: pointer; margin-top: 10px;
-            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+            width: 100%; 
+            background: #0f172a; 
+            color: #f8fafc; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 10px; 
+            font-weight: 800;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            cursor: pointer; 
+            margin-top: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .btn-view-chart:hover { background: #0f172a; color: white; border-color: #0f172a; }
+        .btn-view-chart:hover { 
+            background: #1e293b; 
+            border-color: #38bdf8; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
 
         /* --- Bottom Slide-Up Chart Panel --- */
         #chart-panel {
@@ -600,23 +626,34 @@
                     let rgVal = rawRg ? parseFloat(rawRg) : NaN;
 
                     let metricsArray = [];
+                    let historyGlowClass = '';
                     
                     if (!isNaN(wlVal)) {
-                        metricsArray.push(`<span style="color:#0284c7;">${wlVal}m</span>`);
+                        let wlColor = '#0284c7'; // default text color
+                        if (deviceType.includes('WLMS') || deviceType.includes('TANDEM')) {
+                            let stat = getWlStatus(wlVal, sensorName);
+                            wlColor = stat.color;
+                            
+                            // Attach dynamic glow class if it wasn't normal during this past timestamp
+                            if (stat.class !== 'level-normal') {
+                                historyGlowClass = 'glow-' + stat.class.split('-')[1]; // Extracts 'alert', 'warning', etc.
+                            }
+                        }
+                        metricsArray.push(`<span style="color:${wlColor}; font-weight:800;">${wlVal}m</span>`);
                     }
+                    
                     if (!isNaN(rgVal)) {
-                        metricsArray.push(`<span style="color:#0ea5e9;">${rgVal}mm</span>`);
+                        metricsArray.push(`<span style="color:#0ea5e9; font-weight:800;">${rgVal}mm</span>`);
                     }
                     
                     if (metricsArray.length > 0) {
                         let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
                         let dateStr = recordDate.toLocaleDateString([], {month: 'short', day: 'numeric'});
                         
                         archivedDataMap[historyKey].html.push(`
-                            <div class="history-item">
+                            <div class="history-item ${historyGlowClass}">
                                 <span class="history-time">${timeStr}</span>
-                                <span class="history-metrics">${metricsArray.join('')}</span>
+                                <span class="history-metrics">${metricsArray.join('<br>')}</span>
                             </div>
                         `);
 
@@ -739,7 +776,7 @@
                             if (hasChartData) {
                                 chartBtnHtml = `
                                     <button class="btn-view-chart" onclick="window.openChart('${safeKey}')">
-                                        <i class="fa-solid fa-chart-line"></i> View Line Chart
+                                        <i class="fa-solid fa-chart-line"></i> VIEW WATER THRESHOLD CHART
                                     </button>
                                 `;
                             }
