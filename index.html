@@ -311,6 +311,17 @@
         .modal-body { font-size: 12px; line-height: 1.6; color: #cbd5e1; }
         .modal-body strong { color: #38bdf8; }
 
+        /* --- Modal Image Styling --- */
+        .modal-image {
+            width: 100%;
+            height: 140px; 
+            object-fit: cover; 
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #1e293b; 
+        }
+
     </style>
 </head>
 <body>
@@ -838,16 +849,16 @@
         }
 
         // ==============================================================================
-        // SENSOR INFO POP-UP LOGIC
+        // SENSOR INFO POP-UP LOGIC (WITH IMAGES)
         // ==============================================================================
         const sensorInfo = {
-            'WLMS': '<strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure the real-time distance from the sensor down to the water surface, providing highly accurate river or flood water elevation data.',
+            'WLMS': '<img src="wlms.jpg" alt="WLMS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure the real-time distance from the sensor down to the water surface, providing highly accurate river or flood water elevation data.',
             
-            'ARG': '<strong>Automated Rain Gauge (ARG)</strong><br><br>These instruments measure the amount of rainfall over a set period. They typically use a tipping bucket mechanism that automatically records and transmits accumulated precipitation data.',
+            'ARG': '<img src="arg.jpg" alt="ARG" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Rain Gauge (ARG)</strong><br><br>These instruments measure the amount of rainfall over a set period. They typically use a tipping bucket mechanism that automatically records and transmits accumulated precipitation data.',
             
-            'TANDEM': '<strong>TANDEM Station</strong><br><br>A dual-purpose monitoring station that combines both a Water Level Monitoring System (WLMS) and an Automated Rain Gauge (ARG) in a single location for comprehensive hydrometeorological data.',
+            'TANDEM': '<img src="tandem.jpg" alt="TANDEM" class="modal-image" onerror="this.style.display=\'none\'"><strong>TANDEM Station</strong><br><br>A dual-purpose monitoring station that combines both a Water Level Monitoring System (WLMS) and an Automated Rain Gauge (ARG) in a single location for comprehensive hydrometeorological data.',
             
-            'FEWS': '<strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community-based siren stations strategically placed in vulnerable areas. They are triggered remotely to alert residents of impending flood threats, signaling the need for immediate evacuation.'
+            'FEWS': '<img src="fews.jpg" alt="FEWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community-based siren stations strategically placed in vulnerable areas. They are triggered remotely to alert residents of impending flood threats, signaling the need for immediate evacuation.'
         };
 
         window.openInfoModal = function(type) {
