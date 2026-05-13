@@ -152,6 +152,27 @@
         .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.3s ease; z-index: 1000; }
         .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
 
+        /* Notification Badge physically on the map marker */
+        .marker-alert-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            font-size: 10px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            z-index: 2000;
+            animation: pulse-level-critical 1.5s infinite;
+        }
+
         /* Leaflet Controls */
         .leaflet-control-zoom { border: none !important; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; opacity: 0.8; margin-top: 15px !important; margin-left: 15px !important; }
         .leaflet-control-zoom a { width: 26px !important; height: 26px !important; line-height: 26px !important; font-size: 14px !important; background-color: rgba(15, 23, 42, 0.85) !important; color: #cbd5e1 !important; border-color: rgba(255,255,255,0.1) !important; backdrop-filter: blur(4px); }
@@ -644,6 +665,7 @@
                         
                         var isFews = deviceType.includes('FEWS');
                         var pulseClass = ''; 
+                        var markerAlertBadgeHtml = ''; // The red '!' on the map pin
                         
                         if (rawStatus.includes('UP')) counts.up++;
                         else if (rawStatus.includes('DOWN')) counts.down++;
@@ -686,6 +708,7 @@
                                 if (cleanWl >= t.alert && rawStatus.includes('UP')) {
                                     statusColor = wlStat.color;
                                     pulseClass = 'pulse-' + wlStat.class; // dynamically attach correct pulse speed/color
+                                    markerAlertBadgeHtml = `<div class="marker-alert-badge">!</div>`; // Attach '!' bubble to pin
                                     
                                     if (deviceType.includes('WLMS')) alertCounts.wlms++;
                                     if (deviceType.includes('TANDEM')) alertCounts.tandem++;
@@ -744,7 +767,12 @@
                         var markerSize = isFews ? 30 : 26;
 
                         var customIcon = L.divIcon({
-                            html: `<div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: ${markerSize}px; height: ${markerSize}px;">${iconHtml}</div>`,
+                            html: `
+                                <div style="position: relative; width: ${markerSize}px; height: ${markerSize}px;">
+                                    <div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: 100%; height: 100%;">${iconHtml}</div>
+                                    ${markerAlertBadgeHtml}
+                                </div>
+                            `,
                             className: 'custom-leaflet-icon',
                             iconSize: [markerSize, markerSize],
                             iconAnchor: [markerSize / 2, markerSize / 2]
