@@ -4,7 +4,7 @@
     <title>Tarlac EWS Monitoring Map</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -127,15 +127,15 @@
         .dot-fews { font-size: 14px; line-height: 1; margin-right: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); } 
 
         /* --- WATER LEVEL ALERT BADGES & PULSES --- */
-        .alert-badge { color: white; font-size: 8px; font-weight: 800; padding: 3px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .alert-badge { color: white; font-weight: 900; padding: 4px 8px; border-radius: 6px; vertical-align: middle; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); display: inline-block; }
         .level-normal { background-color: #10b981; }
-        .level-alert { background-color: #facc15; color: #0f172a; }
+        .level-alert { background-color: #eab308; color: #0f172a; }
         .level-warning { background-color: #f97316; }
         .level-critical { background-color: #ef4444; }
         .level-severe { background-color: #7f1d1d; }
 
         /* Custom Animations for Water Danger Levels */
-        @keyframes pulse-level-alert { 0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); } }
+        @keyframes pulse-level-alert { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
         @keyframes pulse-level-warning { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
         @keyframes pulse-level-critical { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         @keyframes pulse-level-severe { 0% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(127, 29, 29, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0); } }
@@ -179,35 +179,35 @@
         .leaflet-control-zoom a:hover { background-color: rgba(30, 41, 59, 0.95) !important; color: white !important; }
 
         /* Popup Styling */
-        .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); font-family: 'Inter', sans-serif; }
-        .leaflet-popup-content { margin: 14px; color: #1f2937; min-width: 250px; } 
+        .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); font-family: 'Inter', sans-serif; }
+        .leaflet-popup-content { margin: 16px; color: #1f2937; } 
         
-        .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 4px 8px; border-radius: 6px; margin-top: 6px; margin-bottom: 6px; font-size: 9px; font-family: monospace; color: #475569; display: flex; align-items: center; gap: 6px; }
+        .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 6px 10px; border-radius: 8px; margin-top: 6px; margin-bottom: 6px; font-size: 10px; font-family: monospace; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
 
-        /* --- HORIZONTAL History Log UI (With Dynamic Glows) --- */
-        .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
-        .history-title { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+        /* --- HORIZONTAL History Log UI (Updated Theme) --- */
+        .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+        .history-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         
         .history-log { 
-            display: flex; flex-direction: row; gap: 8px; overflow-x: auto; overflow-y: hidden; 
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 8px; max-width: 100%;
+            display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; 
+            background: transparent; padding: 4px 0 12px 0; max-width: 100%;
         }
         
         .history-item { 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 0 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;
-            padding: 6px 10px; min-width: 60px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            flex: 0 0 auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px;
+            padding: 8px 12px; min-width: 65px; box-shadow: 0 2px 5px rgba(0,0,0,0.04);
             transition: all 0.3s ease;
         }
 
         /* Dynamic Glows for History Timeline */
-        .history-item.glow-alert { border-color: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.6); background: rgba(250, 204, 21, 0.05); }
-        .history-item.glow-warning { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.6); background: rgba(249, 115, 22, 0.05); }
-        .history-item.glow-critical { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.05); }
-        .history-item.glow-severe { border-color: #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.8); background: rgba(127, 29, 29, 0.1); }
+        .history-item.glow-alert { border-color: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); background: rgba(250, 204, 21, 0.05); }
+        .history-item.glow-warning { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05); }
+        .history-item.glow-critical { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); }
+        .history-item.glow-severe { border-color: #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.6); background: rgba(127, 29, 29, 0.1); }
         
-        .history-time { font-weight: 700; color: #64748b; font-size: 9px; margin-bottom: 3px; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px; width: 100%; text-align: center; }
-        .history-metrics { font-weight: 800; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .history-time { font-weight: 800; color: #475569; font-size: 9px; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; width: 100%; text-align: center; letter-spacing: 0.5px;}
+        .history-metrics { font-weight: 900; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         
         .history-log::-webkit-scrollbar { height: 6px; } 
         .history-log::-webkit-scrollbar-track { background: transparent; }
@@ -220,14 +220,15 @@
             background: #0f172a; 
             color: #f8fafc; 
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px; 
+            padding: 12px; 
             border-radius: 8px; 
-            font-size: 10px; 
+            font-size: 11px; 
+            font-family: 'Inter', sans-serif;
             font-weight: 800;
             text-transform: uppercase; 
             letter-spacing: 0.5px;
             cursor: pointer; 
-            margin-top: 12px;
+            margin-top: 8px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             display: flex; 
             align-items: center; 
@@ -397,7 +398,7 @@
         .chart-modal-overlay.open .chart-modal-content { transform: scale(1) translateY(0); }
         
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-        .chart-title { font-size: 14px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+        .chart-title { font-size: 14px; font-weight: 900; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
         
         .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .chart-close:hover { background: #ef4444; color: white; }
@@ -558,7 +559,7 @@
             let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
 
             if (wl < t.alert) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
-            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT', color: '#facc15' }; 
+            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT', color: '#eab308' }; 
             if (wl < t.critical) return { class: 'level-warning', text: 'WARNING', color: '#f97316' }; 
             if (wl <= t.severe) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
             return { class: 'level-severe', text: 'SEVERE', color: '#7f1d1d' }; 
@@ -638,11 +639,11 @@
                                 historyGlowClass = 'glow-' + stat.class.split('-')[1]; // Extracts 'alert', 'warning', etc.
                             }
                         }
-                        metricsArray.push(`<span style="color:${wlColor}; font-weight:800;">${wlVal}m</span>`);
+                        metricsArray.push(`<span style="color:${wlColor}; font-weight:900;">${wlVal}m</span>`);
                     }
                     
                     if (!isNaN(rgVal)) {
-                        metricsArray.push(`<span style="color:#0ea5e9; font-weight:800;">${rgVal}mm</span>`);
+                        metricsArray.push(`<span style="color:#0ea5e9; font-weight:900;">${rgVal}mm</span>`);
                     }
                     
                     if (metricsArray.length > 0) {
@@ -711,6 +712,7 @@
                         if (isFews) counts.fews++;
 
                         var metricsHtml = "";
+                        var guideHtml = "";
                         
                         let mainWl = getMetric(row, 'WATER', 'COLUMN 6');
                         let mainRg = getMetric(row, 'RAIN', 'COLUMN 7');
@@ -726,18 +728,22 @@
                                 let wlStat = getWlStatus(cleanWl, sensorName);
                                 
                                 currentWlColor = wlStat.color;
-                                currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${wlStat.text}</span>`;
-                                metricsHtml += `<b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:800;">${cleanWl} m</span> <span class="alert-badge ${wlStat.class}">${wlStat.text}</span><br>`;
+                                currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
+                                metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
                                 
-                                // Plain English Threshold Guide inside the map popup
-                                metricsHtml += `
-                                    <div style="font-size: 10px; color: #64748b; margin-top: 8px; margin-bottom: 4px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); line-height: 1.5;">
-                                        <strong style="color: #475569;"><i class="fa-solid fa-circle-info"></i> Water Status Guide:</strong><br>
-                                        &bull; Normal: Up to ${t.alert}m<br>
-                                        &bull; <span style="color:#d97706; font-weight:600;">Alert: ${t.alert}m to ${t.warning}m</span><br>
-                                        &bull; <span style="color:#ea580c; font-weight:600;">Warning: ${t.warning}m to ${t.critical}m</span><br>
-                                        &bull; <span style="color:#dc2626; font-weight:600;">Critical: ${t.critical}m to ${t.severe}m</span><br>
-                                        &bull; <span style="color:#991b1b; font-weight:600;">Severe: Above ${t.severe}m</span>
+                                // New Horizontal Split-Screen Threshold Guide
+                                guideHtml = `
+                                    <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
+                                        <div style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; letter-spacing: 0.5px;">
+                                            <i class="fa-solid fa-circle-info"></i> Thresholds
+                                        </div>
+                                        <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+                                            <tr><td style="color:#10b981; font-weight:800; padding:2px 0;">Normal</td><td style="text-align:right; color:#475569; font-weight:600;">&lt; ${t.alert}m</td></tr>
+                                            <tr><td style="color:#eab308; font-weight:800; padding:2px 0;">Alert</td><td style="text-align:right; color:#475569; font-weight:600;">${t.alert} - ${t.warning}m</td></tr>
+                                            <tr><td style="color:#f97316; font-weight:800; padding:2px 0;">Warning</td><td style="text-align:right; color:#475569; font-weight:600;">${t.warning} - ${t.critical}m</td></tr>
+                                            <tr><td style="color:#ef4444; font-weight:800; padding:2px 0;">Critical</td><td style="text-align:right; color:#475569; font-weight:600;">${t.critical} - ${t.severe}m</td></tr>
+                                            <tr><td style="color:#7f1d1d; font-weight:800; padding:2px 0;">Severe</td><td style="text-align:right; color:#475569; font-weight:600;">&gt; ${t.severe}m</td></tr>
+                                        </table>
                                     </div>
                                 `;
 
@@ -755,7 +761,7 @@
                         
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
                             let cleanRg = parseFloat(mainRg);
-                            if (!isNaN(cleanRg)) metricsHtml += `<b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:800;">${cleanRg} mm</span><br>`;
+                            if (!isNaN(cleanRg)) metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:900; font-size: 15px;">${cleanRg} mm</span></div>`;
                         }
 
                         var historyKey = sensorName + "_" + deviceType; 
@@ -824,29 +830,38 @@
                             lng: lng
                         };
 
+                        // Determine Popup width dynamically (Wider if it has the threshold guide)
+                        let popupWidth = guideHtml !== "" ? 420 : 260;
+
                         marker.bindPopup(`
-                            <div style="line-height:1.6; min-width: 180px;">
-                                <strong style="font-size:11px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:6px; border-bottom:2px solid #e2e8f0; padding-bottom:4px;">
+                            <div style="line-height:1.5;">
+                                <strong style="font-size:13px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:10px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; letter-spacing:0.5px;">
                                     ${sensorName}
                                 </strong>
-                                <div style="font-size:12px; color:#334155;">
-                                    <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Type:</span> ${deviceType}<br>
-                                    <span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:700;">Status:</span> <span style="font-weight:700; color:${statusColor}">${row['Status']}</span><br>
-                                    
-                                    <div class="gps-box">
-                                        <i class="fa-solid fa-location-crosshairs" style="color:#94a3b8;"></i> 
-                                        ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                
+                                <div style="display: flex; gap: 15px; margin-bottom: 12px; align-items: stretch;">
+                                    <div style="flex: 1.2; font-size:12px; color:#334155; display: flex; flex-direction: column; justify-content: center;">
+                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Type:</span> ${deviceType}</div>
+                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Status:</span> <span style="font-weight:900; color:${statusColor}">${row['Status']}</span></div>
+                                        
+                                        <div class="gps-box" style="margin: 6px 0; background: #f1f5f9; border: 1px solid #cbd5e1;">
+                                            <i class="fa-solid fa-location-crosshairs" style="color:#64748b;"></i> 
+                                            ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                        </div>
+                                        
+                                        ${metricsHtml}
                                     </div>
-                                    ${metricsHtml}
+                                    
+                                    ${guideHtml}
                                 </div>
                                 
                                 ${historyHtml}
 
-                                <div style="margin-top:8px; font-size:9px; color:#94a3b8; text-align:right;">
+                                <div style="margin-top:10px; font-size:9px; color:#94a3b8; text-align:right; font-weight:600;">
                                     Updated: ${row['UPDATE:'] || row['TIMESTAMP'] || ''}
                                 </div>
                             </div>
-                        `).addTo(ewsMarkers);
+                        `, { minWidth: popupWidth }).addTo(ewsMarkers);
                     }
                 }
             });
