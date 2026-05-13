@@ -178,12 +178,12 @@
 
         /* --- View Chart Button --- */
         .btn-view-chart {
-            width: 100%; background: #f8fafc; color: #0284c7; border: 1px solid #bae6fd;
+            width: 100%; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1;
             padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 800;
             text-transform: uppercase; cursor: pointer; margin-top: 10px;
             transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .btn-view-chart:hover { background: #0284c7; color: white; border-color: #0284c7; }
+        .btn-view-chart:hover { background: #0f172a; color: white; border-color: #0f172a; }
 
         /* --- Bottom Slide-Up Chart Panel --- */
         #chart-panel {
@@ -457,13 +457,27 @@
         }
 
         // ==============================================================================
-        // NEW EWS WATER LEVEL ALERT LOGIC
+        // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
         // ==============================================================================
-        function getWlStatus(wl) {
-            if (wl < 1.0) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
-            if (wl < 3.0) return { class: 'level-alert', text: 'ALERT (LEVEL 1)', color: '#facc15' }; 
-            if (wl < 5.0) return { class: 'level-warning', text: 'WARNING (LEVEL 2)', color: '#f97316' }; 
-            if (wl <= 7.0) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
+        const sensorThresholds = {
+            // The default scale for any sensor not specifically listed below
+            'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 }
+            
+            // Add specific locations below as you visit them. 
+            // Make sure the name inside the quotes matches the map name EXACTLY!
+            // Example format:
+            // 'CAMILING BRIDGE': { alert: 2.0, warning: 4.5, critical: 6.0, severe: 8.0 },
+            // 'SAN CLEMENTE': { alert: 1.5, warning: 2.5, critical: 3.5, severe: 5.0 }
+        };
+
+        function getWlStatus(wl, sensorName) {
+            // Looks for the specific sensor, if it can't find it, it uses DEFAULT
+            let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
+
+            if (wl < t.alert) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
+            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT (LEVEL 1)', color: '#facc15' }; 
+            if (wl < t.critical) return { class: 'level-warning', text: 'WARNING (LEVEL 2)', color: '#f97316' }; 
+            if (wl <= t.severe) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
             return { class: 'level-severe', text: 'SEVERE FLOODING', color: '#7f1d1d' }; 
         }
 
@@ -602,14 +616,23 @@
                         let mainRg = getMetric(row, 'RAIN', 'COLUMN 7');
 
                         // Evaluate Water Level Logic
+                        var currentWlColor = '#0284c7';
+                        var currentWlBadgeHtml = '';
+
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
                             let cleanWl = parseFloat(mainWl);
                             if (!isNaN(cleanWl)) {
-                                let wlStat = getWlStatus(cleanWl);
+                                // PASS THE SENSOR NAME HERE to check the custom dictionary
+                                let wlStat = getWlStatus(cleanWl, sensorName);
+                                
+                                currentWlColor = wlStat.color;
+                                currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${wlStat.text}</span>`;
                                 metricsHtml += `<b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:800;">${cleanWl} m</span> <span class="alert-badge ${wlStat.class}">${wlStat.text}</span><br>`;
                                 
                                 // Make Marker Pulse & Change Color if Danger Level is Reached
-                                if (cleanWl >= 1.0 && rawStatus.includes('UP')) {
+                                // (It pulses if it is anything above normal)
+                                let defaultAlertLevel = sensorThresholds[sensorName] ? sensorThresholds[sensorName].alert : sensorThresholds['DEFAULT'].alert;
+                                if (cleanWl >= defaultAlertLevel && rawStatus.includes('UP')) {
                                     statusColor = wlStat.color;
                                     pulseClass = 'marker-fews'; 
                                 }
@@ -627,6 +650,10 @@
                         var historyHtml = "";
                         if (archivedDataMap[historyKey] && archivedDataMap[historyKey].html.length > 0) {
                             
+                            // Store the synced main data styling into the archive map for the chart to use
+                            archivedDataMap[historyKey].currentWlColor = currentWlColor;
+                            archivedDataMap[historyKey].currentWlBadgeHtml = currentWlBadgeHtml;
+
                             let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
 
                             let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
@@ -770,16 +797,9 @@
             var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
             var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
 
-            // Determine dynamic Chart Colors based on the most recent Water Level
-            var latestWl = wlData.slice().reverse().find(d => d !== null);
-            var wlColor = '#0284c7'; // Default blue
-            var wlBadgeHtml = '';
-
-            if (latestWl !== undefined && latestWl !== null) {
-                let stat = getWlStatus(latestWl);
-                wlColor = stat.color;
-                wlBadgeHtml = ` <span class="alert-badge ${stat.class}" style="margin-left: 12px; font-size: 10px; padding: 4px 8px;">${stat.text}</span>`;
-            }
+            // Determine dynamic Chart Colors based on the MAIN data instead of the archive array
+            var wlColor = dataObj.currentWlColor || '#0284c7'; 
+            var wlBadgeHtml = dataObj.currentWlBadgeHtml || '';
 
             document.getElementById('chart-title').innerHTML = historyKey.replace('_', ' - ') + " (24H Trend)" + wlBadgeHtml;
             document.getElementById('chart-panel').classList.add('open');
