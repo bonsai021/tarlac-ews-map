@@ -723,14 +723,19 @@
                             let typeName = props.type_name || props.type || 'WLMS';
                             let locationName = props.name || props.location || props.station_name || 'Unknown Location';
 
-                            // Plot the marker
-                            let marker = L.circleMarker([lat, lng], {
-                                radius: 6,
-                                fillColor: statusColor,
-                                color: "#ffffff",
-                                weight: 2,
-                                opacity: 1,
-                                fillOpacity: 0.9
+                            // Upgrade to a floating divIcon so it sits on top of everything
+                            let dostIcon = L.divIcon({
+                                html: `<div style="width: 14px; height: 14px; background-color: ${statusColor}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px ${statusColor};"></div>`,
+                                className: 'dost-live-icon',
+                                iconSize: [14, 14],
+                                // This visually shifts the dot slightly to the top-right of your main EWS icons
+                                iconAnchor: [-10, 20] 
+                            });
+
+                            // Plot the marker with a massive zIndex so it cannot be buried
+                            let marker = L.marker([lat, lng], { 
+                                icon: dostIcon,
+                                zIndexOffset: 9000
                             });
 
                             marker.bindPopup(`
