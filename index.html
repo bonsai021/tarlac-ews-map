@@ -672,7 +672,93 @@
         }
 
         fetchAllData();
-        setInterval(fetchAllData, 60000); 
+        setInterval(fetchAllData, 60000);
+        // ==============================================================================
+        // LIVE DOST-ASTI PHILSENSORS API INTEGRATION
+        // ==============================================================================
+        
+        // 1. Create a dedicated map layer for the live DOST sensors
+        var liveDostMarkers = L.featureGroup().addTo(map);
+        
+        // 2. The exact API endpoint you tracked down
+        const DOST_API_URL = "https://philsensors.asti.dost.gov.ph/api/data/waterlevel-parameter-latest?ascending=false";
+
+        async function fetchLiveDostData() {
+            try {
+                const response = await fetch(DOST_API_URL);
+                const data = await response.json();
+                
+                // Clear the old live markers before painting the new ones
+                liveDostMarkers.clearLayers();
+
+                data.forEach(sensor => {
+                    // Filter: Only plot sensors located in Tarlac
+                    if (sensor.province === "Tarlac") {
+                        let lat = parseFloat(sensor.lat);
+                        let lng = parseFloat(sensor.long);
+
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            // Determine status color (1 = Active/Green, Anything else = Offline/Red)
+                            let isActive = sensor.station_status === 1;
+                            let statusColor = isActive ? '#10b981' : '#ef4444';
+                            
+                            // Format the water level text safely
+                            let wlText = sensor.water_level !== null ? `${sensor.water_level} m` : 'Data Unavailable';
+
+                            // Create a distinct, slightly smaller marker for DOST data
+                            let marker = L.circleMarker([lat, lng], {
+                                radius: 6,
+                                fillColor: statusColor,
+                                color: "#ffffff",
+                                weight: 2,
+                                opacity: 1,
+                                fillOpacity: 0.9
+                            });
+
+                            // Build a clean, distinct pop-up for the DOST API data
+                            marker.bindPopup(`
+                                <div style="font-family: 'Inter', sans-serif; line-height: 1.5; min-width: 220px;">
+                                    <strong style="font-size: 13px; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;">
+                                        ${sensor.location} <span style="color: #64748b; font-size: 10px;">(DOST LIVE)</span>
+                                    </strong>
+                                    
+                                    <div style="font-size: 12px; color: #334155;">
+                                        <div style="margin-bottom: 4px;">
+                                            <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800;">Type:</span> 
+                                            ${sensor.type_name || 'WLMS'}
+                                        </div>
+                                        <div style="margin-bottom: 4px;">
+                                            <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800;">Status:</span> 
+                                            <span style="font-weight: 900; color: ${statusColor};">${isActive ? 'Active' : 'Offline'}</span>
+                                        </div>
+                                        
+                                        <div class="gps-box" style="margin: 6px 0; background: #f1f5f9; border: 1px solid #cbd5e1;">
+                                            <i class="fa-solid fa-location-crosshairs" style="color: #64748b;"></i> 
+                                            ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                        </div>
+                                        
+                                        <div style="margin-top: 8px; font-size: 13px;">
+                                            <b>Water Level:</b> <span style="color: #0284c7; font-weight: 900; font-size: 15px;">${wlText}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                            
+                            liveDostMarkers.addLayer(marker);
+                        }
+                    }
+                });
+                
+                console.log("DOST API Data successfully fetched and mapped.");
+
+            } catch (error) {
+                console.error("DOST API Fetch Blocked (CORS Error):", error);
+            }
+        }
+
+        // 3. Trigger the initial fetch, then update every 5 minutes (300000 ms)
+        fetchLiveDostData();
+        setInterval(fetchLiveDostData, 300000);
 
         document.getElementById('sensorFilter').addEventListener('change', renderMapData);
 
