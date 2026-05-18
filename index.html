@@ -688,49 +688,42 @@
                 const response = await fetch(DOST_API_URL);
                 const data = await response.json();
                 
-                // 1. Let's print the raw package to the console so we can see exactly what DOST sent!
-                console.log("🔍 RAW DATA RECEIVED FROM BRIDGE:", data);
-                
-                // 2. Smart Checker: Find the actual list of sensors no matter how DOST wrapped it
-                let sensorList = [];
-                if (Array.isArray(data)) {
-                    sensorList = data; // It's a direct list
-                } else if (data && Array.isArray(data.data)) {
-                    sensorList = data.data; // It's hidden inside a 'data' property
-                } else if (data && Array.isArray(data.features)) {
-                    sensorList = data.features; // It's hidden inside a 'features' property
-                } else if (data && data.error) {
-                    console.error("🚨 The Google Bridge failed:", data.error, data.details);
-                    return; // Stop the script
-                } else {
-                    console.error("🚨 Format unknown. Look at the 🔍 RAW DATA log above!");
-                    return; // Stop the script
-                }
+                // DOST uses GeoJSON format, so the list is inside 'features'
+                let sensorList = data.features || [];
 
                 liveDostMarkers.clearLayers();
 
-                // 3. Loop through the safely extracted list
-                sensorList.forEach(sensor => {
-                    
-                    // Allow both uppercase and lowercase province names
-                    let province = (sensor.province || "").toUpperCase();
+                // Loop through the features
+                sensorList.forEach(feature => {
+                    let props = feature.properties;
+                    let geom = feature.geometry;
+
+                    // Skip if the data is missing pieces
+                    if (!props || !geom || !geom.coordinates) return;
+
+                    // Safely grab the province (nested inside properties)
+                    let province = (props.province || "").toUpperCase();
                     
                     if (province === "TARLAC") {
                         
-                        // Safety check: Some APIs use 'lat', some use 'latitude'
-                        let lat = parseFloat(sensor.lat || sensor.latitude);
-                        let lng = parseFloat(sensor.long || sensor.longitude || sensor.lon);
+                        // GeoJSON standard puts Longitude first, then Latitude: [lng, lat]
+                        let lng = geom.coordinates[0];
+                        let lat = geom.coordinates[1];
 
                         if (!isNaN(lat) && !isNaN(lng)) {
-                            let isActive = sensor.station_status === 1 || sensor.status === 1;
+                            // Check status
+                            let isActive = props.station_status === 1 || props.status === 1;
                             let statusColor = isActive ? '#10b981' : '#ef4444';
                             
-                            let wl = sensor.water_level || sensor.waterlevel;
+                            // Grab the water level
+                            let wl = props.waterlevel !== undefined ? props.waterlevel : props.water_level;
                             let wlText = wl !== undefined && wl !== null ? `${wl} m` : 'Data Unavailable';
 
-                            let typeName = sensor.type_name || sensor.type || 'WLMS';
-                            let locationName = sensor.location || sensor.station_name || 'Unknown Location';
+                            // Grab the names
+                            let typeName = props.type_name || props.type || 'WLMS';
+                            let locationName = props.name || props.location || props.station_name || 'Unknown Location';
 
+                            // Plot the marker
                             let marker = L.circleMarker([lat, lng], {
                                 radius: 6,
                                 fillColor: statusColor,
@@ -773,10 +766,10 @@
                     }
                 });
                 
-                console.log("DOST API Data successfully fetched and mapped.");
+                console.log("✅ DOST API Data successfully fetched and mapped!");
 
             } catch (error) {
-                console.error("Map rendering error:", error);
+                console.error("🚨 Map rendering error:", error);
             }
         }
 
