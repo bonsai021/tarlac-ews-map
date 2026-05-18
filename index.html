@@ -688,24 +688,49 @@
                 const response = await fetch(DOST_API_URL);
                 const data = await response.json();
                 
-                // Clear the old live markers before painting the new ones
+                // 1. Let's print the raw package to the console so we can see exactly what DOST sent!
+                console.log("🔍 RAW DATA RECEIVED FROM BRIDGE:", data);
+                
+                // 2. Smart Checker: Find the actual list of sensors no matter how DOST wrapped it
+                let sensorList = [];
+                if (Array.isArray(data)) {
+                    sensorList = data; // It's a direct list
+                } else if (data && Array.isArray(data.data)) {
+                    sensorList = data.data; // It's hidden inside a 'data' property
+                } else if (data && Array.isArray(data.features)) {
+                    sensorList = data.features; // It's hidden inside a 'features' property
+                } else if (data && data.error) {
+                    console.error("🚨 The Google Bridge failed:", data.error, data.details);
+                    return; // Stop the script
+                } else {
+                    console.error("🚨 Format unknown. Look at the 🔍 RAW DATA log above!");
+                    return; // Stop the script
+                }
+
                 liveDostMarkers.clearLayers();
 
-                data.forEach(sensor => {
-                    // Filter: Only plot sensors located in Tarlac
-                    if (sensor.province === "Tarlac") {
-                        let lat = parseFloat(sensor.lat);
-                        let lng = parseFloat(sensor.long);
+                // 3. Loop through the safely extracted list
+                sensorList.forEach(sensor => {
+                    
+                    // Allow both uppercase and lowercase province names
+                    let province = (sensor.province || "").toUpperCase();
+                    
+                    if (province === "TARLAC") {
+                        
+                        // Safety check: Some APIs use 'lat', some use 'latitude'
+                        let lat = parseFloat(sensor.lat || sensor.latitude);
+                        let lng = parseFloat(sensor.long || sensor.longitude || sensor.lon);
 
                         if (!isNaN(lat) && !isNaN(lng)) {
-                            // Determine status color (1 = Active/Green, Anything else = Offline/Red)
-                            let isActive = sensor.station_status === 1;
+                            let isActive = sensor.station_status === 1 || sensor.status === 1;
                             let statusColor = isActive ? '#10b981' : '#ef4444';
                             
-                            // Format the water level text safely
-                            let wlText = sensor.water_level !== null ? `${sensor.water_level} m` : 'Data Unavailable';
+                            let wl = sensor.water_level || sensor.waterlevel;
+                            let wlText = wl !== undefined && wl !== null ? `${wl} m` : 'Data Unavailable';
 
-                            // Create a distinct, slightly smaller marker for DOST data
+                            let typeName = sensor.type_name || sensor.type || 'WLMS';
+                            let locationName = sensor.location || sensor.station_name || 'Unknown Location';
+
                             let marker = L.circleMarker([lat, lng], {
                                 radius: 6,
                                 fillColor: statusColor,
@@ -715,17 +740,16 @@
                                 fillOpacity: 0.9
                             });
 
-                            // Build a clean, distinct pop-up for the DOST API data
                             marker.bindPopup(`
                                 <div style="font-family: 'Inter', sans-serif; line-height: 1.5; min-width: 220px;">
                                     <strong style="font-size: 13px; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;">
-                                        ${sensor.location} <span style="color: #64748b; font-size: 10px;">(DOST LIVE)</span>
+                                        ${locationName} <span style="color: #64748b; font-size: 10px;">(DOST LIVE)</span>
                                     </strong>
                                     
                                     <div style="font-size: 12px; color: #334155;">
                                         <div style="margin-bottom: 4px;">
                                             <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800;">Type:</span> 
-                                            ${sensor.type_name || 'WLMS'}
+                                            ${typeName}
                                         </div>
                                         <div style="margin-bottom: 4px;">
                                             <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800;">Status:</span> 
@@ -752,7 +776,7 @@
                 console.log("DOST API Data successfully fetched and mapped.");
 
             } catch (error) {
-                console.error("DOST API Fetch Blocked (CORS Error):", error);
+                console.error("Map rendering error:", error);
             }
         }
 
