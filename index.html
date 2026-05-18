@@ -681,7 +681,7 @@
         var liveDostMarkers = L.featureGroup().addTo(map);
         
         // 2. The exact API endpoint you tracked down
-        const DOST_API_URL = "https://api.allorigins.win/raw?url=https%3A%2F%2Fphilsensors.asti.dost.gov.ph%2Fapi%2Fdata%2Fwaterlevel-parameter-latest%3Fascending%3Dfalse";
+       const DOST_API_URL = "https://corsproxy.io/?https://philsensors.asti.dost.gov.ph/api/data/waterlevel-parameter-latest?ascending=false";
         
         async function fetchLiveDostData() {
             try {
