@@ -1,1123 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Tarlac EWS Monitoring Map</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOST Live Sensors - Sandbox Fix</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    
-    <style>
-        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; background: #f3f4f6; } 
 
-        /* --- Top Control Pill --- */
-        .control-panel {
+    <style>
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        #map { height: 100vh; width: 100vw; background: #0f172a; }
+
+        /* Clean Header */
+        .header-panel {
             position: absolute;
-            top: 15px; 
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            background: rgba(15, 23, 42, 0.75); 
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 20px; 
-            border-radius: 40px; 
-            color: white;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .panel-title {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #f8fafc;
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding-right: 15px;
-            line-height: 1.3;
-            text-align: right;
-            white-space: normal;
-        }
-
-        /* Sensor Filter Dropdown */
-        .filter-container {
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding-right: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .filter-container select {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #f8fafc;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-family: 'Inter', sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            appearance: none; 
-            -webkit-appearance: none;
-            padding-right: 30px;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px top 50%;
-            background-size: 8px auto;
-        }
-
-        .filter-container select:hover, .filter-container select:focus {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: #38bdf8;
-        }
-        .filter-container select option { background: #1e293b; color: white; }
-
-        /* iOS-Style Theme Switch */
-        .switch-container { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-        .switch-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-        .switch { position: relative; display: inline-block; width: 32px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); transition: .3s ease; border-radius: 18px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: #94a3b8; transition: .3s ease; border-radius: 50%; }
-        input:checked + .slider { background-color: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.5); }
-        input:checked + .slider:before { transform: translateX(14px); background-color: #ffffff; }
-
-        /* --- Network Health Dashboard --- */
-        .health-panel {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 1000;
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px;
+            padding: 12px 24px;
+            border-radius: 30px;
             color: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 200px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
         }
 
-        .health-panel h3 { margin: 0 0 12px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-weight: 700; display: flex; justify-content: space-between; }
-        .health-stat { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .health-stat:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-        .stat-label { font-size: 10px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
-        .stat-value { font-size: 14px; font-weight: 800; color: #f8fafc; }
-
-        .indicator-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-        .dot-up { background: #10b981; }      
-        .dot-down { background: #ef4444; }    
-        .dot-maint { background: #f59e0b; }   
-        .dot-reloc { background: #8b5cf6; }   
-        .dot-fews { font-size: 14px; line-height: 1; margin-right: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); } 
-
-        /* --- WATER LEVEL ALERT BADGES & PULSES --- */
-        .alert-badge { color: white; font-weight: 900; padding: 4px 8px; border-radius: 6px; vertical-align: middle; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); display: inline-block; }
-        .level-normal { background-color: #10b981; }
-        .level-alert { background-color: #eab308; color: #0f172a; }
-        .level-warning { background-color: #f97316; }
-        .level-critical { background-color: #ef4444; }
-        .level-severe { background-color: #7f1d1d; }
-
-        /* Custom Animations for Water Danger Levels */
-        @keyframes pulse-level-alert { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-        @keyframes pulse-level-warning { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
-        @keyframes pulse-level-critical { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        @keyframes pulse-level-severe { 0% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(127, 29, 29, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 29, 29, 0); } }
-
-        .pulse-level-alert { animation: pulse-level-alert 2s infinite; z-index: 1001 !important; }
-        .pulse-level-warning { animation: pulse-level-warning 1.5s infinite; z-index: 1001 !important; }
-        .pulse-level-critical { animation: pulse-level-critical 1s infinite; z-index: 1002 !important; }
-        .pulse-level-severe { animation: pulse-level-severe 0.5s infinite; z-index: 1002 !important; }
-
-        @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* --- Custom Map Markers --- */
-        .custom-leaflet-icon { background: none; border: none; }
-        .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.3s ease; z-index: 1000; }
-        .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
-
-        /* Notification Badge physically on the map marker */
-        .marker-alert-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            font-size: 10px;
+        .header-title {
+            font-size: 14px;
             font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            z-index: 2000;
-            animation: pulse-level-critical 1.5s infinite;
-        }
-
-        /* Leaflet Controls */
-        .leaflet-control-zoom { border: none !important; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; opacity: 0.8; margin-top: 15px !important; margin-left: 15px !important; }
-        .leaflet-control-zoom a { width: 26px !important; height: 26px !important; line-height: 26px !important; font-size: 14px !important; background-color: rgba(15, 23, 42, 0.85) !important; color: #cbd5e1 !important; border-color: rgba(255,255,255,0.1) !important; backdrop-filter: blur(4px); }
-        .leaflet-control-zoom a:hover { background-color: rgba(30, 41, 59, 0.95) !important; color: white !important; }
-
-        /* Popup Styling */
-        .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); font-family: 'Inter', sans-serif; }
-        .leaflet-popup-content { margin: 16px; color: #1f2937; } 
-        
-        .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 6px 10px; border-radius: 8px; margin-top: 6px; margin-bottom: 6px; font-size: 10px; font-family: monospace; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
-
-        /* --- HORIZONTAL History Log UI (Updated Theme) --- */
-        .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-        .history-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        
-        .history-log { 
-            display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; 
-            background: transparent; padding: 4px 0 12px 0; max-width: 100%;
-        }
-        
-        .history-item { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 0 0 auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px;
-            padding: 8px 12px; min-width: 65px; box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-            transition: all 0.3s ease;
-        }
-
-        /* Dynamic Glows for History Timeline */
-        .history-item.glow-alert { border-color: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); background: rgba(250, 204, 21, 0.05); }
-        .history-item.glow-warning { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05); }
-        .history-item.glow-critical { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); }
-        .history-item.glow-severe { border-color: #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.6); background: rgba(127, 29, 29, 0.1); }
-        
-        .history-time { font-weight: 800; color: #475569; font-size: 9px; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; width: 100%; text-align: center; letter-spacing: 0.5px;}
-        .history-metrics { font-weight: 900; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        
-        .history-log::-webkit-scrollbar { height: 6px; } 
-        .history-log::-webkit-scrollbar-track { background: transparent; }
-        .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* --- View Chart Button (Updated Theme) --- */
-        .btn-view-chart {
-            width: 100%; 
-            background: #0f172a; 
-            color: #f8fafc; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-            font-family: 'Inter', sans-serif;
-            font-weight: 800;
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            cursor: pointer; 
-            margin-top: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn-view-chart:hover { 
-            background: #1e293b; 
-            border-color: #38bdf8; 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            transform: translateY(-2px);
-        }
-
-        /* --- Map Legend Panel --- */
-        .legend-panel {
-            position: absolute;
-            bottom: 25px;
-            left: 15px;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 170px;
-            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .legend-panel h3 {
-            margin: 0 0 12px 0;
-            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #94a3b8;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 8px;
-            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 4px;
         }
-
-        /* --- Make Legend Items Clickable --- */
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-            cursor: pointer; 
-            padding: 4px; 
-            border-radius: 6px; 
-            transition: background 0.2s ease;
-        }
-        .legend-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .legend-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .legend-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background-color: #475569;
-            border: 2px solid #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            position: relative; /* Needed to anchor the notification badge */
-        }
-
-        .legend-icon.fews-icon {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            font-size: 16px;
-            width: auto;
-            height: auto;
-            margin-left: 2px;
-            margin-right: 4px;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
-        }
-
-        /* Legend Notification Badge */
-        .legend-notification {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #ef4444;
-            color: white;
-            font-size: 8px;
-            font-weight: bold;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #0f172a;
-            animation: pulse-level-critical 2s infinite;
-            display: none; /* Hidden by default */
-        }
-
-        .legend-label {
+        
+        .header-subtitle {
             font-size: 10px;
             font-weight: 600;
-            color: #cbd5e1;
+            color: #94a3b8;
             letter-spacing: 0.5px;
         }
 
-        /* --- Info Pop-up Modal --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-            z-index: 3000; display: none; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        
-        .modal-content {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 20px; width: 320px; color: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-        .modal-overlay.active .modal-content { transform: translateY(0); }
-        
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-header h3 { margin: 0; font-size: 14px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px; }
-        .modal-close { background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .modal-close:hover { color: #ef4444; }
-        
-        .modal-body { font-size: 12px; line-height: 1.6; color: #cbd5e1; }
-        .modal-body strong { color: #38bdf8; }
-
-        /* --- Modal Image Styling --- */
-        .modal-image {
-            width: 100%;
-            height: 140px; 
-            object-fit: cover; 
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: #1e293b; 
+        /* Marker CSS */
+        .dost-pulse {
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
         }
 
-        /* --- Center Pop-out Chart Modal --- */
-        .chart-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
-            z-index: 4000; display: none; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        .chart-modal-overlay.open { display: flex; opacity: 1; }
+        /* Leaflet Pop-up Styling */
+        .leaflet-popup-content-wrapper { border-radius: 12px; font-family: 'Inter', sans-serif; }
+        .leaflet-popup-content { margin: 15px; color: #1e293b; }
         
-        .chart-modal-content {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px; padding: 20px 25px; width: 90%; max-width: 1000px; height: 75vh;
-            color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-            transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            display: flex; flex-direction: column;
-        }
-        .chart-modal-overlay.open .chart-modal-content { transform: scale(1) translateY(0); }
-        
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-        .chart-title { font-size: 14px; font-weight: 900; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-        
-        .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .chart-close:hover { background: #ef4444; color: white; }
-        
-        .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
-
+        /* GPS box inside popup */
+        .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 6px 10px; border-radius: 8px; margin-top: 6px; margin-bottom: 6px; font-size: 10px; font-family: monospace; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
 
-    <div class="control-panel">
-        <div class="panel-title">
-            Community Based Flood Early<br>Warning Monitoring System
-        </div>
-        
-        <div class="filter-container">
-            <select id="sensorFilter">
-                <option value="ALL">All Sensors</option>
-                <option value="WLMS">WLMS (Water Level)</option>
-                <option value="ARG">ARG (Rain Gauge)</option>
-                <option value="TANDEM">TANDEM (Combo)</option>
-                <option value="FEWS">FEWS (Sirens)</option>
-            </select>
-        </div>
-
-        <div class="switch-container">
-            <span class="switch-label">Dark</span>
-            <label class="switch">
-                <input type="checkbox" id="themeToggleCheckbox" checked>
-                <span class="slider"></span>
-            </label>
-            <span class="switch-label">Light</span>
-        </div>
-    </div>
-
-    <div class="health-panel">
-        <h3>Network Health <span id="statTotal" style="color: #38bdf8;">0 Total</span></h3>
-        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-up"></div> ACTIVE (UP)</div><div class="stat-value" id="statUp">0</div></div>
-        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-down"></div> OFFLINE (DOWN)</div><div class="stat-value" id="statDown">0</div></div>
-        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-maint"></div> MAINTENANCE</div><div class="stat-value" id="statMaint">0</div></div>
-        <div class="health-stat"><div class="stat-label"><div class="indicator-dot dot-reloc"></div> RELOCATION</div><div class="stat-value" id="statReloc">0</div></div>
-        <div class="health-stat" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;"><div class="stat-label"><span class="dot-fews">🚨</span> FEWS SIRENS</div><div class="stat-value" id="statFews" style="color: #cbd5e1;">0</div></div>
-    </div>
-
-    <!-- Clickable Legend Panel with Notification Badges -->
-    <div class="legend-panel" id="legendPanel">
-        <h3>Sensor Types</h3>
-        <div class="legend-item" onclick="openInfoModal('WLMS')">
-            <div class="legend-icon">
-                <i class="fa-solid fa-water"></i>
-                <div id="wlms-badge" class="legend-notification">!</div>
-            </div>
-            <div class="legend-label">WLMS</div>
-        </div>
-        <div class="legend-item" onclick="openInfoModal('ARG')">
-            <div class="legend-icon"><i class="fa-solid fa-cloud-rain"></i></div>
-            <div class="legend-label">ARG</div>
-        </div>
-        <div class="legend-item" onclick="openInfoModal('TANDEM')">
-            <div class="legend-icon">
-                <i class="fa-solid fa-cloud-showers-water"></i>
-                <div id="tandem-badge" class="legend-notification">!</div>
-            </div>
-            <div class="legend-label">TANDEM</div>
-        </div>
-        <div class="legend-item" onclick="openInfoModal('FEWS')">
-            <div class="legend-icon fews-icon">🚨</div>
-            <div class="legend-label">FEWS</div>
-        </div>
-    </div>
-
-    <!-- Hidden Info Pop-up Modal -->
-    <div id="infoModalOverlay" class="modal-overlay" onclick="closeInfoModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="modalTitle">Sensor Info</h3>
-                <button class="modal-close" onclick="closeInfoModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Info will be injected here via Javascript -->
-            </div>
-        </div>
+    <div class="header-panel">
+        <div class="header-title">DOST-ASTI Live Feed Sandbox</div>
+        <div class="header-subtitle">Real-time PhilSensors Data (Tarlac)</div>
     </div>
 
     <div id="map"></div>
 
-    <!-- Center Pop-out Chart Modal -->
-    <div id="chartModalOverlay" class="chart-modal-overlay" onclick="window.closeChart()">
-        <div class="chart-modal-content" onclick="event.stopPropagation()">
-            <div class="chart-header">
-                <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
-                <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="chart-container">
-                <canvas id="historyChart"></canvas>
-            </div>
-        </div>
-    </div>
-
     <script>
+        // 1. Initialize the Map centered on Tarlac
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
-        var darkBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
-        var lightBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
-        var currentBasemap = lightBasemap;
-        currentBasemap.addTo(map);
+        // 2. Add Dark Basemap
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19
+        }).addTo(map);
 
-        document.getElementById('themeToggleCheckbox').addEventListener('change', function(e) {
-            map.removeLayer(currentBasemap);
-            currentBasemap = e.target.checked ? lightBasemap : darkBasemap;
-            currentBasemap.addTo(map);
-            currentBasemap.bringToBack(); 
-        });
+        // 3. Create a layer specifically for the markers
+        var liveDostMarkers = L.featureGroup().addTo(map);
 
-        var ewsBuffers = L.featureGroup().addTo(map); 
-        var ewsMarkers = L.featureGroup().addTo(map);
-        
-        // ==============================================================================
-        // IMPORTANT: PASTE YOUR TWO PUBLISHED CSV LINKS HERE
-        // ==============================================================================
-        var mainCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; 
-        
-        // ---> THIS MUST BE THE LINK TO YOUR ARCHIVE TAB FOR THE HISTORY TO WORK <---
-        var archiveCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?gid=1557794138&single=true&output=csv'; 
-        // ==============================================================================
-        
-        var allDownloadedData = [];
-        var archivedDataMap = {}; 
-        var currentChartInstance = null; 
+        // 4. Using AllOrigins Proxy Link
+        const DOST_API_URL = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://philsensors.asti.dost.gov.ph/api/data/waterlevel-parameter-latest?ascending=false");
 
-        function getColor(status) {
-            if (!status) return '#475569'; 
-            var s = status.toUpperCase();
-            if (s.includes('UP')) return '#10b981';        
-            if (s.includes('DOWN')) return '#ef4444';      
-            if (s.includes('RELOCATION')) return '#8b5cf6'; 
-            if (s.includes('MAINTENANCE')) return '#f59e0b'; 
-            return '#3b82f6'; 
-        }
-
-        // ==============================================================================
-        // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
-        // ==============================================================================
-        const sensorThresholds = {
-            // The default scale for any sensor not specifically listed below
-            'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 }
-            
-            // Add specific locations below as you visit them. 
-            // Make sure the name inside the quotes matches the map name EXACTLY!
-            // Example format:
-            // 'CAMILING BRIDGE': { alert: 2.0, warning: 4.5, critical: 6.0, severe: 8.0 },
-            // 'SAN CLEMENTE': { alert: 1.5, warning: 2.5, critical: 3.5, severe: 5.0 }
-        };
-
-        function getWlStatus(wl, sensorName) {
-            // Looks for the specific sensor, if it can't find it, it uses DEFAULT
-            let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
-
-            if (wl < t.alert) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
-            if (wl < t.warning) return { class: 'level-alert', text: 'ALERT', color: '#eab308' }; 
-            if (wl < t.critical) return { class: 'level-warning', text: 'WARNING', color: '#f97316' }; 
-            if (wl <= t.severe) return { class: 'level-critical', text: 'CRITICAL', color: '#ef4444' }; 
-            return { class: 'level-severe', text: 'SEVERE', color: '#7f1d1d' }; 
-        }
-
-        // Helper to convert hex color to rgba for the chart background
-        function hexToRgba(hex, alpha) {
-            var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-
-        function fetchCsvData(url) {
-            return new Promise((resolve) => {
-                Papa.parse(url, {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) { resolve(results.data); },
-                    error: function() { resolve([]); } 
-                });
-            });
-        }
-
-        function getMetric(row, keyword1, keyword2) {
-            let keys = Object.keys(row);
-            let targetKey = keys.find(k => k.toUpperCase().includes(keyword1) || (keyword2 && k.toUpperCase().includes(keyword2)));
-            if (targetKey && row[targetKey] && row[targetKey].trim() !== '') {
-                return row[targetKey];
-            }
-            return null;
-        }
-
-        async function fetchAllData() {
-            var [mainData, archiveData] = await Promise.all([
-                fetchCsvData(mainCsvUrl),
-                fetchCsvData(archiveCsvUrl)
-            ]);
-
-            allDownloadedData = mainData;
-            archivedDataMap = {};
-            var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
-
-            for (let i = archiveData.length - 1; i >= 0; i--) {
-                let row = archiveData[i];
-                let keys = Object.keys(row);
+        async function loadDOSTData() {
+            try {
+                console.log("Fetching DOST data via proxy...");
+                const response = await fetch(DOST_API_URL);
+                const rawWrapper = await response.json();
                 
-                let timestampStr = row['TIMESTAMP'] || row[keys[keys.length - 1]]; 
-                let recordDate = new Date(timestampStr);
+                // Unpack and parse the string nested inside rawWrapper.contents
+                const actualData = JSON.parse(rawWrapper.contents);
+                
+                // Handle both GeoJSON arrays and flat data structures dynamically
+                let sensorList = actualData.features || actualData.data || actualData || [];
 
-                if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
-                    let sensorName = row['LIST OF INSTRUMENT'] || "Unknown";
-                    let deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "UNKNOWN";
-                    
-                    let historyKey = sensorName + "_" + deviceType; 
+                console.log(`Unpacked ${sensorList.length} total network nodes.`);
 
-                    if (!archivedDataMap[historyKey]) {
-                        archivedDataMap[historyKey] = { html: [], raw: [] };
-                    }
-                    
-                    let rawWl = getMetric(row, 'WATER', 'COLUMN 6');
-                    let rawRg = getMetric(row, 'RAIN', 'COLUMN 7');
-                    
-                    let wlVal = rawWl ? parseFloat(rawWl) : NaN;
-                    let rgVal = rawRg ? parseFloat(rawRg) : NaN;
+                liveDostMarkers.clearLayers();
+                let tarlacCount = 0;
 
-                    let metricsArray = [];
-                    let historyGlowClass = '';
+                // Loop through sensors
+                sensorList.forEach(item => {
+                    // Look directly at the root item, or inside properties if present
+                    let props = item.properties ? item.properties : item;
                     
-                    if (!isNaN(wlVal)) {
-                        let wlColor = '#0284c7'; // default text color
-                        if (deviceType.includes('WLMS') || deviceType.includes('TANDEM')) {
-                            let stat = getWlStatus(wlVal, sensorName);
-                            wlColor = stat.color;
-                            
-                            // Attach dynamic glow class if it wasn't normal during this past timestamp
-                            if (stat.class !== 'level-normal') {
-                                historyGlowClass = 'glow-' + stat.class.split('-')[1]; // Extracts 'alert', 'warning', etc.
-                            }
+                    // Safe extract province text
+                    let province = (props.province || item.province || "").toUpperCase();
+                    
+                    if (province === "TARLAC") {
+                        
+                        // BULLETPROOF COORDINATE PICKER: Looks everywhere on the object
+                        let lat = NaN;
+                        let lng = NaN;
+
+                        if (item.latitude !== undefined && item.longitude !== undefined) {
+                            lat = parseFloat(item.latitude);
+                            lng = parseFloat(item.longitude);
+                        } else if (item.lat !== undefined && item.long !== undefined) {
+                            lat = parseFloat(item.lat);
+                            lng = parseFloat(item.long);
+                        } else if (item.geometry && item.geometry.coordinates) {
+                            lng = parseFloat(item.geometry.coordinates[0]);
+                            lat = parseFloat(item.geometry.coordinates[1]);
                         }
-                        metricsArray.push(`<span style="color:${wlColor}; font-weight:900;">${wlVal}m</span>`);
-                    }
-                    
-                    if (!isNaN(rgVal)) {
-                        metricsArray.push(`<span style="color:#0ea5e9; font-weight:900;">${rgVal}mm</span>`);
-                    }
-                    
-                    if (metricsArray.length > 0) {
-                        let timeStr = recordDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        let dateStr = recordDate.toLocaleDateString([], {month: 'short', day: 'numeric'});
-                        
-                        archivedDataMap[historyKey].html.push(`
-                            <div class="history-item ${historyGlowClass}">
-                                <span class="history-time">${timeStr}</span>
-                                <span class="history-metrics">${metricsArray.join('<br>')}</span>
-                            </div>
-                        `);
 
-                        archivedDataMap[historyKey].raw.push({
-                            timestamp: recordDate.getTime(),
-                            timeStr: timeStr,
-                            dateStr: dateStr, 
-                            wl: wlVal,
-                            rg: rgVal
-                        });
-                    }
-                }
-            }
-            renderMapData(); 
-        }
+                        // If coordinates are valid numbers, plot the point!
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            tarlacCount++;
+                            
+                            // Determine Status & Color
+                            let statusVal = props.status !== undefined ? props.status : props.station_status;
+                            let isActive = statusVal === 1;
+                            let statusColor = isActive ? '#10b981' : '#ef4444'; 
+                            let statusText = isActive ? 'ACTIVE' : 'OFFLINE';
+                            
+                            // Extract Data Fields
+                            let wl = props.waterlevel !== undefined ? props.waterlevel : props.water_level;
+                            let wlText = wl !== undefined && wl !== null ? `${wl} m` : 'Data Unavailable';
+                            let typeName = props.type_name || props.type || 'WLMS';
+                            let locationName = props.name || props.location || props.station_name || 'Unknown Location';
 
-        fetchAllData();
-        setInterval(fetchAllData, 60000); 
+                            // Create the Marker Dot Layout
+                            let markerIcon = L.divIcon({
+                                html: `<div class="dost-pulse" style="width: 14px; height: 14px; background-color: ${statusColor}; border: 2px solid white; border-radius: 50%;"></div>`,
+                                className: 'custom-div-icon',
+                                iconSize: [14, 14],
+                                iconAnchor: [7, 7]
+                            });
 
-        document.getElementById('sensorFilter').addEventListener('change', renderMapData);
+                            let marker = L.marker([lat, lng], { icon: markerIcon });
 
-        function renderMapData() {
-            ewsMarkers.clearLayers();
-            ewsBuffers.clearLayers(); 
-            var counts = { total: 0, up: 0, down: 0, maint: 0, reloc: 0, fews: 0 };
-            
-            // Track alerts for the Legend badges
-            var alertCounts = { wlms: 0, tandem: 0 };
-
-            var activeFilter = document.getElementById('sensorFilter').value;
-
-            allDownloadedData.forEach(function(row) {
-                var lat = parseFloat(row['LATITUDE']);
-                var lng = parseFloat(row['LONGITUDE']); 
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    var rawStatus = (row['Status'] || "").toUpperCase();
-                    var deviceType = row['DEVICE TYPE'] ? row['DEVICE TYPE'].toUpperCase() : "";
-                    var sensorName = row['LIST OF INSTRUMENT'] || "Unknown";
-                    
-                    var showMarker = (activeFilter === 'ALL') || deviceType.includes(activeFilter);
-
-                    if (showMarker) {
-                        counts.total++;
-                        var statusColor = getColor(row['Status']);
-                        
-                        var isFews = deviceType.includes('FEWS');
-                        var pulseClass = ''; 
-                        var markerAlertBadgeHtml = ''; // The red '!' on the map pin
-                        
-                        if (rawStatus.includes('UP')) counts.up++;
-                        else if (rawStatus.includes('DOWN')) counts.down++;
-                        else if (rawStatus.includes('MAINTENANCE')) counts.maint++;
-                        else if (rawStatus.includes('RELOCATION')) counts.reloc++;
-                        if (isFews) counts.fews++;
-
-                        var metricsHtml = "";
-                        var guideHtml = "";
-                        
-                        let mainWl = getMetric(row, 'WATER', 'COLUMN 6');
-                        let mainRg = getMetric(row, 'RAIN', 'COLUMN 7');
-
-                        // Evaluate Water Level Logic
-                        var currentWlColor = '#0284c7';
-                        var currentWlBadgeHtml = '';
-
-                        if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
-                            let cleanWl = parseFloat(mainWl);
-                            if (!isNaN(cleanWl)) {
-                                let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
-                                let wlStat = getWlStatus(cleanWl, sensorName);
-                                
-                                currentWlColor = wlStat.color;
-                                currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
-                                metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
-                                
-                                // New Horizontal Split-Screen Threshold Guide
-                                guideHtml = `
-                                    <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
-                                        <div style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; letter-spacing: 0.5px;">
-                                            <i class="fa-solid fa-circle-info"></i> Thresholds
-                                        </div>
-                                        <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
-                                            <tr><td style="color:#10b981; font-weight:800; padding:2px 0;">Normal</td><td style="text-align:right; color:#475569; font-weight:600;">&lt; ${t.alert}m</td></tr>
-                                            <tr><td style="color:#eab308; font-weight:800; padding:2px 0;">Alert</td><td style="text-align:right; color:#475569; font-weight:600;">${t.alert} - ${t.warning}m</td></tr>
-                                            <tr><td style="color:#f97316; font-weight:800; padding:2px 0;">Warning</td><td style="text-align:right; color:#475569; font-weight:600;">${t.warning} - ${t.critical}m</td></tr>
-                                            <tr><td style="color:#ef4444; font-weight:800; padding:2px 0;">Critical</td><td style="text-align:right; color:#475569; font-weight:600;">${t.critical} - ${t.severe}m</td></tr>
-                                            <tr><td style="color:#7f1d1d; font-weight:800; padding:2px 0;">Severe</td><td style="text-align:right; color:#475569; font-weight:600;">&gt; ${t.severe}m</td></tr>
-                                        </table>
-                                    </div>
-                                `;
-
-                                // Make Marker Pulse & track Legend Alert if Danger Level is Reached
-                                if (cleanWl >= t.alert && rawStatus.includes('UP')) {
-                                    statusColor = wlStat.color;
-                                    pulseClass = 'pulse-' + wlStat.class; // dynamically attach correct pulse speed/color
-                                    markerAlertBadgeHtml = `<div class="marker-alert-badge">!</div>`; // Attach '!' bubble to pin
+                            // Build Pop-up details
+                            marker.bindPopup(`
+                                <div style="min-width: 200px;">
+                                    <strong style="font-size: 14px; text-transform: uppercase; color: #0f172a; display: block; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">
+                                        ${locationName}
+                                    </strong>
                                     
-                                    if (deviceType.includes('WLMS')) alertCounts.wlms++;
-                                    if (deviceType.includes('TANDEM')) alertCounts.tandem++;
-                                }
-                            }
-                        }
-                        
-                        if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
-                            let cleanRg = parseFloat(mainRg);
-                            if (!isNaN(cleanRg)) metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:900; font-size: 15px;">${cleanRg} mm</span></div>`;
-                        }
-
-                        var historyKey = sensorName + "_" + deviceType; 
-
-                        // Build HORIZONTAL history box HTML + Scrubbed Chart Button
-                        var historyHtml = "";
-                        if (archivedDataMap[historyKey] && archivedDataMap[historyKey].html.length > 0) {
-                            
-                            // Store the synced main data styling into the archive map for the chart to use
-                            archivedDataMap[historyKey].currentWlColor = currentWlColor;
-                            archivedDataMap[historyKey].currentWlBadgeHtml = currentWlBadgeHtml;
-
-                            let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
-
-                            let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
-                            
-                            let chartBtnHtml = "";
-                            if (hasChartData) {
-                                chartBtnHtml = `
-                                    <button class="btn-view-chart" onclick="window.openChart('${safeKey}')">
-                                        <i class="fa-solid fa-chart-line"></i> VIEW 24H TREND
-                                    </button>
-                                `;
-                            }
-
-                            historyHtml = `
-                                <div class="history-container">
-                                    <div class="history-title">
-                                        <i class="fa-solid fa-clock-rotate-left"></i> Past 24 Hours Timeline
+                                    <div style="font-size: 12px; margin-bottom: 6px;">
+                                        <b style="color: #64748b;">TYPE:</b> ${typeName}
                                     </div>
-                                    <div class="history-log">
-                                        ${archivedDataMap[historyKey].html.join('')}
-                                    </div>
-                                    ${chartBtnHtml}
-                                </div>
-                            `;
-                        }
-
-                        var iconHtml = isFews 
-                            ? `<div style="font-size: 16px; line-height: 1; margin-top: -1px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));">🚨</div>`
-                            : (deviceType.includes('TANDEM') ? `<i class="fa-solid fa-cloud-showers-water" style="font-size: 12px;"></i>` 
-                            : (deviceType.includes('WLMS') ? `<i class="fa-solid fa-water" style="font-size: 12px;"></i>` 
-                            : (deviceType.includes('ARG') ? `<i class="fa-solid fa-cloud-rain" style="font-size: 12px;"></i>` 
-                            : `<i class="fa-solid fa-satellite-dish" style="font-size: 12px;"></i>`)));
-
-                        var markerSize = isFews ? 30 : 26;
-
-                        var customIcon = L.divIcon({
-                            html: `
-                                <div style="position: relative; width: ${markerSize}px; height: ${markerSize}px;">
-                                    <div class="map-marker ${pulseClass}" style="background-color: ${statusColor}; width: 100%; height: 100%;">${iconHtml}</div>
-                                    ${markerAlertBadgeHtml}
-                                </div>
-                            `,
-                            className: 'custom-leaflet-icon',
-                            iconSize: [markerSize, markerSize],
-                            iconAnchor: [markerSize / 2, markerSize / 2]
-                        });
-
-                        var marker = L.marker([lat, lng], { icon: customIcon });
-                        
-                        marker.deviceData = {
-                            type: deviceType,
-                            status: rawStatus,
-                            lat: lat,
-                            lng: lng
-                        };
-
-                        // Determine Popup width dynamically (Wider if it has the threshold guide)
-                        let popupWidth = guideHtml !== "" ? 420 : 260;
-
-                        marker.bindPopup(`
-                            <div style="line-height:1.5;">
-                                <strong style="font-size:13px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:10px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; letter-spacing:0.5px;">
-                                    ${sensorName}
-                                </strong>
-                                
-                                <div style="display: flex; gap: 15px; margin-bottom: 12px; align-items: stretch;">
-                                    <div style="flex: 1.2; font-size:12px; color:#334155; display: flex; flex-direction: column; justify-content: center;">
-                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Type:</span> ${deviceType}</div>
-                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Status:</span> <span style="font-weight:900; color:${statusColor}">${row['Status']}</span></div>
-                                        
-                                        <div class="gps-box" style="margin: 6px 0; background: #f1f5f9; border: 1px solid #cbd5e1;">
-                                            <i class="fa-solid fa-location-crosshairs" style="color:#64748b;"></i> 
-                                            ${lat.toFixed(5)}, ${lng.toFixed(5)}
-                                        </div>
-                                        
-                                        ${metricsHtml}
+                                    <div style="font-size: 12px; margin-bottom: 10px;">
+                                        <b style="color: #64748b;">STATUS:</b> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
                                     </div>
                                     
-                                    ${guideHtml}
+                                    <div class="gps-box">
+                                        <i class="fa-solid fa-location-crosshairs"></i> ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                    </div>
+                                    
+                                    <div style="font-size: 14px; margin-top: 8px;">
+                                        <b>Water Level:</b> <span style="color: #0284c7; font-weight: 900;">${wlText}</span>
+                                    </div>
                                 </div>
-                                
-                                ${historyHtml}
-
-                                <div style="margin-top:10px; font-size:9px; color:#94a3b8; text-align:right; font-weight:600;">
-                                    Updated: ${row['UPDATE:'] || row['TIMESTAMP'] || ''}
-                                </div>
-                            </div>
-                        `, { minWidth: popupWidth }).addTo(ewsMarkers);
-                    }
-                }
-            });
-
-            // Update Legend Notification Badges
-            var wlmsBadge = document.getElementById('wlms-badge');
-            if (alertCounts.wlms > 0) {
-                wlmsBadge.style.display = 'flex';
-                wlmsBadge.innerText = alertCounts.wlms;
-            } else {
-                wlmsBadge.style.display = 'none';
-            }
-
-            var tandemBadge = document.getElementById('tandem-badge');
-            if (alertCounts.tandem > 0) {
-                tandemBadge.style.display = 'flex';
-                tandemBadge.innerText = alertCounts.tandem;
-            } else {
-                tandemBadge.style.display = 'none';
-            }
-
-            document.getElementById('statTotal').innerText = `${counts.total} Total`;
-            document.getElementById('statUp').innerText = counts.up;
-            document.getElementById('statDown').innerText = counts.down;
-            document.getElementById('statMaint').innerText = counts.maint;
-            document.getElementById('statReloc').innerText = counts.reloc;
-            document.getElementById('statFews').innerText = counts.fews;
-
-            if (ewsMarkers.getLayers().length > 0 && !window.initialZoomDone) {
-                map.fitBounds(ewsMarkers.getBounds(), { padding: [50, 50] });
-                window.initialZoomDone = true;
-            }
-        }
-
-        // ==============================================================================
-        // ANIMATED ON-DEMAND 10KM BUFFER ZONE
-        // ==============================================================================
-        map.on('popupopen', function(e) {
-            ewsBuffers.clearLayers(); 
-            
-            if (e.popup && e.popup._source && e.popup._source.deviceData) {
-                var data = e.popup._source.deviceData;
-                if ((data.type.includes('ARG') || data.type.includes('TANDEM')) && !data.status.includes('RELOCATION')) {
-                    
-                    var animatedCircle = L.circle([data.lat, data.lng], {
-                        radius: 0, color: '#0ea5e9', weight: 1.5, opacity: 0.5, fillColor: '#0ea5e9', fillOpacity: 0.1, interactive: false 
-                    }).addTo(ewsBuffers);
-
-                    var maxRadius = 10000; 
-                    var duration = 400; 
-                    var startTime = null;
-
-                    function animate(currentTime) {
-                        if (!startTime) startTime = currentTime;
-                        var progress = Math.min((currentTime - startTime) / duration, 1);
-                        var easeOutProgress = 1 - Math.pow(1 - progress, 3);
-                        
-                        animatedCircle.setRadius(maxRadius * easeOutProgress);
-                        if (progress < 1) requestAnimationFrame(animate); 
-                    }
-                    requestAnimationFrame(animate); 
-                }
-            }
-        });
-
-        map.on('popupclose', function() {
-            ewsBuffers.clearLayers();
-        });
-
-        // ==============================================================================
-        // UPGRADED CHART.JS RENDERING ENGINE (WITH STACKED DATE & TIME)
-        // ==============================================================================
-        window.openChart = function(encodedKey) {
-            var historyKey = decodeURIComponent(encodedKey);
-            var dataObj = archivedDataMap[historyKey];
-            
-            if (!dataObj || dataObj.raw.length === 0) return;
-
-            var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
-
-            // Extract sensor name to get correct threshold lines for the chart
-            var lastUnderscoreIndex = historyKey.lastIndexOf('_');
-            var sensorNameOnly = historyKey.substring(0, lastUnderscoreIndex);
-            var t = sensorThresholds[sensorNameOnly] || sensorThresholds['DEFAULT'];
-
-            var labels = sortedData.map(d => [d.timeStr, d.dateStr]);
-            var wlData = sortedData.map(d => isNaN(d.wl) ? null : d.wl);
-            var rgData = sortedData.map(d => isNaN(d.rg) ? null : d.rg);
-
-            var wlColor = dataObj.currentWlColor || '#0284c7'; 
-            var wlBadgeHtml = dataObj.currentWlBadgeHtml || '';
-
-            document.getElementById('chart-title').innerHTML = historyKey.replace('_', ' - ') + " (24H Trend)" + wlBadgeHtml;
-            document.getElementById('chartModalOverlay').classList.add('open');
-
-            var ctx = document.getElementById('historyChart').getContext('2d');
-
-            if (currentChartInstance) {
-                currentChartInstance.destroy();
-            }
-
-            var datasets = [];
-            
-            if (wlData.some(d => d !== null)) {
-                datasets.push({
-                    label: 'Water Level (m)',
-                    data: wlData,
-                    borderColor: wlColor, 
-                    backgroundColor: hexToRgba(wlColor, 0.15),
-                    borderWidth: 2,
-                    pointRadius: 0, 
-                    pointHoverRadius: 6,
-                    pointHitRadius: 15, 
-                    fill: true,
-                    tension: 0.45, 
-                    yAxisID: 'y'
-                });
-
-                // Add threshold lines as separate non-filled datasets so you can see when water is getting close
-                datasets.push({ label: 'Alert Level', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Warning Level', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Critical Level', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-            }
-            
-            if (rgData.some(d => d !== null)) {
-                datasets.push({
-                    label: 'Rainfall (mm)',
-                    data: rgData,
-                    borderColor: '#0ea5e9', 
-                    backgroundColor: 'rgba(14, 165, 233, 0.15)',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHitRadius: 15,
-                    fill: true,
-                    tension: 0.45,
-                    yAxisID: 'y1'
-                });
-            }
-
-            currentChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: { bottom: 5 }
-                    },
-                    color: '#cbd5e1',
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    scales: {
-                        x: {
-                            ticks: { 
-                                color: '#94a3b8', 
-                                font: { family: 'Inter', size: 9 }, 
-                                maxRotation: 0, 
-                                autoSkipPadding: 20 
-                            },
-                            grid: { display: false } 
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Meters (m)', color: wlColor, font: { size: 10, weight: 'bold'} },
-                            ticks: { color: wlColor },
-                            grid: { color: 'rgba(255,255,255,0.05)' }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: datasets.length > 1 && rgData.some(d => d !== null), 
-                            position: 'right',
-                            title: { display: true, text: 'Millimeters (mm)', color: '#0ea5e9', font: { size: 10, weight: 'bold'} },
-                            ticks: { color: '#0ea5e9' },
-                            grid: { drawOnChartArea: false } 
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { 
-                                color: '#f8fafc', 
-                                font: { family: 'Inter', size: 11, weight: 'bold' }, 
-                                boxWidth: 24, 
-                                boxHeight: 2 
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                            titleColor: '#94a3b8',
-                            bodyColor: '#f8fafc',
-                            borderColor: 'rgba(255, 255, 255, 0.15)',
-                            borderWidth: 1,
-                            padding: 16,
-                            cornerRadius: 12,
-                            boxPadding: 6,
-                            usePointStyle: true,
-                            titleFont: { family: 'Inter', size: 11, weight: '800' },
-                            bodyFont: { family: 'Inter', size: 13, weight: '700' },
-                            titleMarginBottom: 10,
-                            bodySpacing: 8,
-                            displayColors: true,
-                            filter: function(tooltipItem) {
-                                // Hide the static threshold lines from the tooltip hover box for a cleaner look
-                                return tooltipItem.dataset.label === 'Water Level (m)' || tooltipItem.dataset.label === 'Rainfall (mm)';
-                            },
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    var index = tooltipItems[0].dataIndex;
-                                    var pointData = sortedData[index];
-                                    return pointData.dateStr + ' • ' + pointData.timeStr;
-                                },
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y;
-                                }
-                            }
+                            `);
+                            
+                            liveDostMarkers.addLayer(marker);
                         }
                     }
+                });
+
+                console.log(`✅ Success! Plotted ${tarlacCount} DOST sensors in Tarlac.`);
+                
+                // Fit map frame around the sensors if any were found
+                if (tarlacCount > 0) {
+                    map.fitBounds(liveDostMarkers.getBounds(), { padding: [50, 50] });
                 }
-            });
+
+            } catch (error) {
+                console.error("🚨 Sandbox Parse/Fetch Error:", error);
+            }
         }
 
-        window.closeChart = function() {
-            document.getElementById('chartModalOverlay').classList.remove('open');
-        }
-
-        // ==============================================================================
-        // SENSOR INFO POP-UP LOGIC (WITH IMAGES)
-        // ==============================================================================
-        const sensorInfo = {
-            'WLMS': '<img src="wlms.JPG" alt="WLMS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure the real-time distance from the sensor down to the water surface, providing highly accurate river or flood water elevation data.',
-            
-            'ARG': '<img src="arg.JPG" alt="ARG" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Rain Gauge (ARG)</strong><br><br>These instruments measure the amount of rainfall over a set period. They typically use a tipping bucket mechanism that automatically records and transmits accumulated precipitation data.',
-            
-            'TANDEM': '<img src="tandem.JPG" alt="TANDEM" class="modal-image" onerror="this.style.display=\'none\'"><strong>TANDEM Station</strong><br><br>A dual-purpose monitoring station that combines both a Water Level Monitoring System (WLMS) and an Automated Rain Gauge (ARG) in a single location for comprehensive hydrometeorological data.',
-            
-            'FEWS': '<img src="fews.JPG" alt="FEWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community-based siren stations strategically placed in vulnerable areas. They are triggered remotely to alert residents of impending flood threats, signaling the need for immediate evacuation.'
-        };
-
-        window.openInfoModal = function(type) {
-            document.getElementById('modalTitle').innerText = type + " Information";
-            document.getElementById('modalBody').innerHTML = sensorInfo[type] || "Information not available.";
-            document.getElementById('infoModalOverlay').classList.add('active');
-        }
-
-        window.closeInfoModal = function() {
-            document.getElementById('infoModalOverlay').classList.remove('active');
-        }
+        // 5. Run the fetch immediately
+        loadDOSTData();
 
     </script>
 </body>
 </html>
-
