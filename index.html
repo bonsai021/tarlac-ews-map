@@ -120,7 +120,7 @@
         .stat-value { font-size: 14px; font-weight: 800; color: #f8fafc; }
 
         .indicator-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-        .dot-up { background: #10b981; }      
+        .dot-up { background: #10b981; }     
         .dot-down { background: #ef4444; }    
         .dot-maint { background: #f59e0b; }   
         .dot-reloc { background: #8b5cf6; }   
@@ -710,45 +710,62 @@
                         var currentWlColor = '#0284c7';
                         var currentWlBadgeHtml = '';
 
+                        // --- UPGRADED WATER LEVEL LOGIC WITH ERR HANDLING ---
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
-                            let cleanWl = parseFloat(mainWl);
-                            if (!isNaN(cleanWl)) {
-                                let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
-                                let wlStat = getWlStatus(cleanWl, sensorName);
-                                
-                                currentWlColor = wlStat.color;
-                                currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
-                                metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
-                                
-                                guideHtml = `
-                                    <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
-                                        <div style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; letter-spacing: 0.5px;">
-                                            <i class="fa-solid fa-circle-info"></i> Thresholds
-                                        </div>
-                                        <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
-                                            <tr><td style="color:#10b981; font-weight:800; padding:2px 0;">Normal</td><td style="text-align:right; color:#475569; font-weight:600;">&lt; ${t.alert}m</td></tr>
-                                            <tr><td style="color:#eab308; font-weight:800; padding:2px 0;">Alert</td><td style="text-align:right; color:#475569; font-weight:600;">${t.alert} - ${t.warning}m</td></tr>
-                                            <tr><td style="color:#f97316; font-weight:800; padding:2px 0;">Warning</td><td style="text-align:right; color:#475569; font-weight:600;">${t.warning} - ${t.critical}m</td></tr>
-                                            <tr><td style="color:#ef4444; font-weight:800; padding:2px 0;">Critical</td><td style="text-align:right; color:#475569; font-weight:600;">${t.critical} - ${t.severe}m</td></tr>
-                                            <tr><td style="color:#7f1d1d; font-weight:800; padding:2px 0;">Severe</td><td style="text-align:right; color:#475569; font-weight:600;">&gt; ${t.severe}m</td></tr>
-                                        </table>
-                                    </div>
-                                `;
-
-                                if (cleanWl >= t.alert && rawStatus.includes('UP')) {
-                                    statusColor = wlStat.color;
-                                    pulseClass = 'pulse-' + wlStat.class; 
-                                    markerAlertBadgeHtml = `<div class="marker-alert-badge">!</div>`; 
+                            
+                            let isError = mainWl.toString().toUpperCase().includes('ERR');
+                            
+                            if (isError) {
+                                metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:#ef4444; font-weight:900; font-size: 15px;">ERR</span> <span class="alert-badge level-severe" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;"><i class="fa-solid fa-triangle-exclamation"></i> SENSOR FAULT</span></div>`;
+                            } else {
+                                let cleanWl = parseFloat(mainWl);
+                                if (!isNaN(cleanWl)) {
+                                    let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
+                                    let wlStat = getWlStatus(cleanWl, sensorName);
                                     
-                                    if (deviceType.includes('WLMS')) alertCounts.wlms++;
-                                    if (deviceType.includes('TANDEM')) alertCounts.tandem++;
+                                    currentWlColor = wlStat.color;
+                                    currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
+                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
+                                    
+                                    guideHtml = `
+                                        <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
+                                            <div style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; letter-spacing: 0.5px;">
+                                                <i class="fa-solid fa-circle-info"></i> Thresholds
+                                            </div>
+                                            <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+                                                <tr><td style="color:#10b981; font-weight:800; padding:2px 0;">Normal</td><td style="text-align:right; color:#475569; font-weight:600;">&lt; ${t.alert}m</td></tr>
+                                                <tr><td style="color:#eab308; font-weight:800; padding:2px 0;">Alert</td><td style="text-align:right; color:#475569; font-weight:600;">${t.alert} - ${t.warning}m</td></tr>
+                                                <tr><td style="color:#f97316; font-weight:800; padding:2px 0;">Warning</td><td style="text-align:right; color:#475569; font-weight:600;">${t.warning} - ${t.critical}m</td></tr>
+                                                <tr><td style="color:#ef4444; font-weight:800; padding:2px 0;">Critical</td><td style="text-align:right; color:#475569; font-weight:600;">${t.critical} - ${t.severe}m</td></tr>
+                                                <tr><td style="color:#7f1d1d; font-weight:800; padding:2px 0;">Severe</td><td style="text-align:right; color:#475569; font-weight:600;">&gt; ${t.severe}m</td></tr>
+                                            </table>
+                                        </div>
+                                    `;
+
+                                    if (cleanWl >= t.alert && rawStatus.includes('UP')) {
+                                        statusColor = wlStat.color;
+                                        pulseClass = 'pulse-' + wlStat.class; 
+                                        markerAlertBadgeHtml = `<div class="marker-alert-badge">!</div>`; 
+                                        
+                                        if (deviceType.includes('WLMS')) alertCounts.wlms++;
+                                        if (deviceType.includes('TANDEM')) alertCounts.tandem++;
+                                    }
                                 }
                             }
                         }
                         
+                        // --- UPGRADED RAINFALL LOGIC WITH ERR HANDLING ---
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
-                            let cleanRg = parseFloat(mainRg);
-                            if (!isNaN(cleanRg)) metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:900; font-size: 15px;">${cleanRg} mm</span></div>`;
+                            let isError = mainRg.toString().toUpperCase().includes('ERR');
+                            
+                            if (isError) {
+                                metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#ef4444; font-weight:900; font-size: 15px;">ERR</span> <span class="alert-badge level-severe" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;"><i class="fa-solid fa-triangle-exclamation"></i> SENSOR FAULT</span></div>`;
+                            } else {
+                                let cleanRg = parseFloat(mainRg);
+                                if (!isNaN(cleanRg)) {
+                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#0ea5e9; font-weight:900; font-size: 15px;">${cleanRg} mm</span></div>`;
+                                }
+                            }
                         }
 
                         var historyKey = sensorName + "_" + deviceType; 
@@ -1086,4 +1103,3 @@
     </script>
 </body>
 </html>
-
