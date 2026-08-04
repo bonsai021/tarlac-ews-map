@@ -498,7 +498,7 @@
         </div>
     </div>
 
-   <script>
+  <script>
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
@@ -538,16 +538,12 @@
             return '#3b82f6'; 
         }
 
-        // ==============================================================================
-        // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
-        // ==============================================================================
         const sensorThresholds = {
             'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 }
         };
 
         function getWlStatus(wl, sensorName) {
             let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
-
             if (wl < t.alert) return { class: 'level-normal', text: 'NORMAL', color: '#10b981' }; 
             if (wl < t.warning) return { class: 'level-alert', text: 'ALERT', color: '#eab308' }; 
             if (wl < t.critical) return { class: 'level-warning', text: 'WARNING', color: '#f97316' }; 
@@ -560,11 +556,12 @@
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        function fetchCsvData(url) {
+        // UPGRADE: Added "useHeader" flag. 
+        function fetchCsvData(url, useHeader) {
             return new Promise((resolve) => {
                 Papa.parse(url, {
                     download: true,
-                    header: true,
+                    header: useHeader, // If false, returns raw arrays instead of objects
                     skipEmptyLines: true,
                     complete: function(results) { resolve(results.data); },
                     error: function() { resolve([]); } 
@@ -575,39 +572,40 @@
         function getMetric(row, keyword1, keyword2) {
             let keys = Object.keys(row);
             let targetKey = keys.find(k => k.toUpperCase().includes(keyword1) || (keyword2 && k.toUpperCase().includes(keyword2)));
-            if (targetKey && row[targetKey] && row[targetKey].trim() !== '') {
-                return row[targetKey];
-            }
+            if (targetKey && row[targetKey] && row[targetKey].trim() !== '') return row[targetKey];
             return null;
         }
 
         async function fetchAllData() {
-            // FIX 1: ADDED CACHE-BUSTER TO FORCE FRESH DOWNLOADS
             var cacheBuster = new Date().getTime();
+            
+            // UPGRADE: Fetch main with headers, but fetch archive WITHOUT headers (pure arrays)
             var [mainData, archiveData] = await Promise.all([
-                fetchCsvData(mainCsvUrl + '&cb=' + cacheBuster),
-                fetchCsvData(archiveCsvUrl + '&cb=' + cacheBuster)
+                fetchCsvData(mainCsvUrl + '&cb=' + cacheBuster, true),
+                fetchCsvData(archiveCsvUrl + '&cb=' + cacheBuster, false) 
             ]);
 
             allDownloadedData = mainData;
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
 
-            for (let i = archiveData.length - 1; i >= 0; i--) {
+            // UPGRADE: Parse Archive strictly by Column Number (Bypassing header errors)
+            for (let i = archiveData.length - 1; i >= 1; i--) { // Start at 1 to skip header row visually
                 let row = archiveData[i];
-                let keys = Object.keys(row);
+                if (!row || row.length < 10) continue; // Skip broken rows
                 
-                let timestampStr = row['TIMESTAMP'] || row[keys[keys.length - 1]]; 
-                let recordDate = new Date(timestampStr);
+                // Col 13 (Index 12) is Timestamp. Fallback to Col 7 (Index 6) if missing
+                let rawDate = row[12] || row[6] || ""; 
+                
+                // Safari Fix: Convert dashes to slashes for reliable date parsing
+                let safeDateString = rawDate.replace(/-/g, '/');
+                let recordDate = new Date(safeDateString);
 
                 if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
                     
-                    // FIX 2: FALLBACK TO "COLUMN 2" FOR ARCHIVE SHEET HEADERS + STRING CLEANING
-                    let rawName = row['LIST OF INSTRUMENT'] || row['Column 2'] || row['COLUMN 2'] || "Unknown";
-                    let sensorName = rawName.toString().trim().toUpperCase();
-
-                    let rawType = row['DEVICE TYPE'] || row['Column 1'] || row['COLUMN 1'] || "UNKNOWN";
-                    let deviceType = rawType.toString().trim().toUpperCase();
+                    // Col 1 (Index 0) = Type, Col 2 (Index 1) = Name
+                    let deviceType = (row[0] || "UNKNOWN").toString().trim().toUpperCase();
+                    let sensorName = (row[1] || "UNKNOWN").toString().trim().toUpperCase();
                     
                     let historyKey = sensorName + "_" + deviceType; 
 
@@ -615,12 +613,9 @@
                         archivedDataMap[historyKey] = { html: [], raw: [] };
                     }
                     
-                    // FIX 3: ARCHIVE FALLBACK COLUMNS ARE 8 & 9 (NOT 6 & 7)
-                    let rawWl = getMetric(row, 'WATER', 'COLUMN 8');
-                    let rawRg = getMetric(row, 'RAIN', 'COLUMN 9');
-                    
-                    let wlVal = rawWl ? parseFloat(rawWl) : NaN;
-                    let rgVal = rawRg ? parseFloat(rawRg) : NaN;
+                    // Col 8 (Index 7) = Water, Col 9 (Index 8) = Rain
+                    let wlVal = parseFloat(row[7]);
+                    let rgVal = parseFloat(row[8]);
 
                     let metricsArray = [];
                     let historyGlowClass = '';
@@ -684,7 +679,6 @@
                 if (!isNaN(lat) && !isNaN(lng)) {
                     var rawStatus = (row['Status'] || row['STATUS'] || "").toUpperCase();
                     
-                    // CLEAN STRINGS TO MATCH ARCHIVE KEYS EXACTLY
                     var rawType = row['DEVICE TYPE'] || "UNKNOWN";
                     var deviceType = rawType.toString().trim().toUpperCase();
                     
@@ -1075,11 +1069,8 @@
 
         const sensorInfo = {
             'WLMS': '<img src="wlms.JPG" alt="WLMS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure the real-time distance from the sensor down to the water surface, providing highly accurate river or flood water elevation data.',
-            
             'ARG': '<img src="arg.JPG" alt="ARG" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Rain Gauge (ARG)</strong><br><br>These instruments measure the amount of rainfall over a set period. They typically use a tipping bucket mechanism that automatically records and transmits accumulated precipitation data.',
-            
             'TANDEM': '<img src="tandem.JPG" alt="TANDEM" class="modal-image" onerror="this.style.display=\'none\'"><strong>TANDEM Station</strong><br><br>A dual-purpose monitoring station that combines both a Water Level Monitoring System (WLMS) and an Automated Rain Gauge (ARG) in a single location for comprehensive hydrometeorological data.',
-            
             'FEWS': '<img src="fews.JPG" alt="FEWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community-based siren stations strategically placed in vulnerable areas. They are triggered remotely to alert residents of impending flood threats, signaling the need for immediate evacuation.'
         };
 
