@@ -498,7 +498,7 @@
         </div>
     </div>
 
-  <script>
+ <script>
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
@@ -739,12 +739,21 @@
                                     
                                     // --- MAIN MAP CALIBRATION DEDUCTION FOR CAMILING (UPDATED TO 1.26) ---
                                     let calibrationNoteHtml = "";
+                                    let thresholdNoteHtml = ""; // Variable to hold the specific spilling note
+                                    
                                     if (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING') {
                                         cleanWl = parseFloat((cleanWl - 1.26).toFixed(2));
                                         
                                         calibrationNoteHtml = `
                                             <div style="margin-top: 8px; padding: 8px; background-color: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; font-size: 9px; color: #b45309; line-height: 1.4; border-radius: 0 4px 4px 0;">
-                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>-1.26m</b> deduction, estimated based on current bridge water levels. The severe threshold is estimated at <b>7.85m</b>. The sensor will be officially recalibrated next week. This offset is for temporary viewing calibration.
+                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>-1.26m</b> deduction, estimated based on current bridge water levels. The sensor will be officially recalibrated next week. This offset is for temporary viewing calibration.
+                                            </div>
+                                        `;
+                                        
+                                        // The new note that will be appended inside the Thresholds table
+                                        thresholdNoteHtml = `
+                                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1; font-size: 8px; color: #ef4444; font-weight: 800; text-align: center; letter-spacing: 0.5px;">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> NOTE: 7.85m IS THE SPILLING LEVEL
                                             </div>
                                         `;
                                     }
@@ -770,6 +779,7 @@
                                                 <tr><td style="color:#ef4444; font-weight:800; padding:2px 0;">Critical</td><td style="text-align:right; color:#475569; font-weight:600;">${t.critical} - ${t.severe}m</td></tr>
                                                 <tr><td style="color:#7f1d1d; font-weight:800; padding:2px 0;">Severe</td><td style="text-align:right; color:#475569; font-weight:600;">&gt; ${t.severe}m</td></tr>
                                             </table>
+                                            ${thresholdNoteHtml}
                                         </div>
                                     `;
 
