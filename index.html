@@ -632,9 +632,9 @@
                     let wlVal = parseFloat(row[7]);
                     let rgVal = parseFloat(row[8]);
 
-                    // --- ARCHIVE CALIBRATION DEDUCTION FOR CAMILING ---
+                    // --- ARCHIVE CALIBRATION DEDUCTION FOR CAMILING (UPDATED TO 1.26) ---
                     if (!isNaN(wlVal) && (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING')) {
-                        wlVal = parseFloat((wlVal - 1.87).toFixed(2));
+                        wlVal = parseFloat((wlVal - 1.26).toFixed(2));
                     }
 
                     let metricsArray = [];
@@ -737,14 +737,17 @@
                                 let cleanWl = parseFloat(mainWl);
                                 if (!isNaN(cleanWl)) {
                                     
-                                    // --- MAIN MAP CALIBRATION DEDUCTION FOR CAMILING ---
+                                    // --- MAIN MAP CALIBRATION DEDUCTION FOR CAMILING (UPDATED TO 1.26) ---
                                     let calibrationNoteHtml = "";
                                     if (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING') {
-                                        cleanWl = parseFloat((cleanWl - 1.87).toFixed(2));
+                                        cleanWl = parseFloat((cleanWl - 1.26).toFixed(2));
                                         
                                         calibrationNoteHtml = `
                                             <div style="margin-top: 8px; padding: 8px; background-color: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; font-size: 9px; color: #b45309; line-height: 1.4; border-radius: 0 4px 4px 0;">
-                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>-1.87m</b> deduction, estimated based on current bridge water levels. The sensor will be officially recalibrated next week. This offset is for temporary viewing calibration.
+                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>-1.26m</b> deduction, estimated based on current bridge water levels. The sensor will be officially recalibrated next week. This offset is for temporary viewing calibration.
+                                            </div>
+                                            <div style="margin-top: 6px; padding: 8px; background-color: rgba(56, 189, 248, 0.08); border-left: 3px solid #0ea5e9; font-size: 9px; color: #0284c7; line-height: 1.4; border-radius: 0 4px 4px 0;">
+                                                <b><i class="fa-solid fa-circle-exclamation"></i> Lowland Advisory:</b> Please be advised that at this specific meter level, low-lying areas in Camiling may experience drainage water spills.
                                             </div>
                                         `;
                                     }
