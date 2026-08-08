@@ -478,7 +478,7 @@
                 <button class="modal-close" onclick="closeInfoModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- Info will be injected here via Javascript -->
+                <!-- Info will be injected here via Java -->
             </div>
         </div>
     </div>
@@ -538,9 +538,32 @@
             return '#3b82f6'; 
         }
 
-const sensorThresholds = {
-            'DEFAULT': { alert: 3.0, warning: 5.0, critical: 6.0, severe: 7.0 },
-            'CAMILING BRIDGE': { alert: 6.71, warning: 7.40, critical: 7.84, severe: 7.85 }
+        // ==============================================================================
+        // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
+        // ==============================================================================
+        const sensorThresholds = {
+            'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 },
+            
+            // Camiling
+            'CAMILING BRIDGE': { alert: 6.71, warning: 7.40, critical: 7.84, severe: 7.85 },
+            'CAMILING': { alert: 6.71, warning: 7.40, critical: 7.84, severe: 7.85 },
+            
+            // Barangobong
+            'BARANGOBONG BRIDGE': { alert: 4.0, warning: 5.0, critical: 6.0, severe: 8.0 },
+            'BARANGOBONG': { alert: 4.0, warning: 5.0, critical: 6.0, severe: 8.0 },
+            
+            // Lubigan
+            'LUBIGAN BRIDGE': { alert: 3.01, warning: 5.01, critical: 7.0, severe: 7.1 },
+            'LUBIGAN': { alert: 3.01, warning: 5.01, critical: 7.0, severe: 7.1 },
+            
+            // Bangot 
+            'BANGOT BRIDGE': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
+            'BANGOT': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
+            
+            // Balanti 
+            'BALANTI BRIDGE': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
+            'BALANTI WLMS': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
+            'BALANTI': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 }
         };
 
         function getWlStatus(wl, sensorName) {
@@ -557,12 +580,11 @@ const sensorThresholds = {
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        // UPGRADE: Added "useHeader" flag. 
         function fetchCsvData(url, useHeader) {
             return new Promise((resolve) => {
                 Papa.parse(url, {
                     download: true,
-                    header: useHeader, // If false, returns raw arrays instead of objects
+                    header: useHeader, 
                     skipEmptyLines: true,
                     complete: function(results) { resolve(results.data); },
                     error: function() { resolve([]); } 
@@ -580,7 +602,6 @@ const sensorThresholds = {
         async function fetchAllData() {
             var cacheBuster = new Date().getTime();
             
-            // UPGRADE: Fetch main with headers, but fetch archive WITHOUT headers (pure arrays)
             var [mainData, archiveData] = await Promise.all([
                 fetchCsvData(mainCsvUrl + '&cb=' + cacheBuster, true),
                 fetchCsvData(archiveCsvUrl + '&cb=' + cacheBuster, false) 
@@ -590,33 +611,31 @@ const sensorThresholds = {
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
 
-            // UPGRADE: Parse Archive strictly by Column Number (Bypassing header errors)
-            for (let i = archiveData.length - 1; i >= 1; i--) { // Start at 1 to skip header row visually
+            for (let i = archiveData.length - 1; i >= 1; i--) { 
                 let row = archiveData[i];
-                if (!row || row.length < 10) continue; // Skip broken rows
+                if (!row || row.length < 10) continue; 
                 
-                // Col 13 (Index 12) is Timestamp. Fallback to Col 7 (Index 6) if missing
                 let rawDate = row[12] || row[6] || ""; 
-                
-                // Safari Fix: Convert dashes to slashes for reliable date parsing
                 let safeDateString = rawDate.replace(/-/g, '/');
                 let recordDate = new Date(safeDateString);
 
                 if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
                     
-                    // Col 1 (Index 0) = Type, Col 2 (Index 1) = Name
                     let deviceType = (row[0] || "UNKNOWN").toString().trim().toUpperCase();
                     let sensorName = (row[1] || "UNKNOWN").toString().trim().toUpperCase();
-                    
                     let historyKey = sensorName + "_" + deviceType; 
 
                     if (!archivedDataMap[historyKey]) {
                         archivedDataMap[historyKey] = { html: [], raw: [] };
                     }
                     
-                    // Col 8 (Index 7) = Water, Col 9 (Index 8) = Rain
                     let wlVal = parseFloat(row[7]);
                     let rgVal = parseFloat(row[8]);
+
+                    // --- ARCHIVE CALIBRATION DEDUCTION FOR CAMILING ---
+                    if (!isNaN(wlVal) && (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING')) {
+                        wlVal = parseFloat((wlVal - 1.87).toFixed(2));
+                    }
 
                     let metricsArray = [];
                     let historyGlowClass = '';
@@ -679,10 +698,8 @@ const sensorThresholds = {
                 
                 if (!isNaN(lat) && !isNaN(lng)) {
                     var rawStatus = (row['Status'] || row['STATUS'] || "").toUpperCase();
-                    
                     var rawType = row['DEVICE TYPE'] || "UNKNOWN";
                     var deviceType = rawType.toString().trim().toUpperCase();
-                    
                     var rawName = row['LIST OF INSTRUMENT'] || "Unknown";
                     var sensorName = rawName.toString().trim().toUpperCase();
                     
@@ -691,7 +708,6 @@ const sensorThresholds = {
                     if (showMarker) {
                         counts.total++;
                         var statusColor = getColor(rawStatus);
-                        
                         var isFews = deviceType.includes('FEWS');
                         var pulseClass = ''; 
                         var markerAlertBadgeHtml = ''; 
@@ -711,9 +727,8 @@ const sensorThresholds = {
                         var currentWlColor = '#0284c7';
                         var currentWlBadgeHtml = '';
 
-                        // --- UPGRADED WATER LEVEL LOGIC WITH ERR HANDLING ---
+                        // --- WATER LEVEL PARSING ---
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
-                            
                             let isError = mainWl.toString().toUpperCase().includes('ERR');
                             
                             if (isError) {
@@ -721,12 +736,27 @@ const sensorThresholds = {
                             } else {
                                 let cleanWl = parseFloat(mainWl);
                                 if (!isNaN(cleanWl)) {
+                                    
+                                    // --- MAIN MAP CALIBRATION DEDUCTION FOR CAMILING ---
+                                    let calibrationNoteHtml = "";
+                                    if (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING') {
+                                        cleanWl = parseFloat((cleanWl - 1.87).toFixed(2));
+                                        
+                                        calibrationNoteHtml = `
+                                            <div style="margin-top: 8px; padding: 8px; background-color: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; font-size: 9px; color: #b45309; line-height: 1.4; border-radius: 0 4px 4px 0;">
+                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>-1.87m</b> deduction, estimated based on current bridge water levels. The sensor will be officially recalibrated next week. This offset is for temporary viewing calibration.
+                                            </div>
+                                        `;
+                                    }
+
                                     let t = sensorThresholds[sensorName] || sensorThresholds['DEFAULT'];
                                     let wlStat = getWlStatus(cleanWl, sensorName);
                                     
                                     currentWlColor = wlStat.color;
                                     currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
-                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
+                                    
+                                    // Inject calibrated Water Level and the Note
+                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>` + calibrationNoteHtml;
                                     
                                     guideHtml = `
                                         <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
@@ -755,10 +785,9 @@ const sensorThresholds = {
                             }
                         }
                         
-                        // --- UPGRADED RAINFALL LOGIC WITH ERR HANDLING ---
+                        // --- RAINFALL PARSING ---
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM')) && mainRg) {
                             let isError = mainRg.toString().toUpperCase().includes('ERR');
-                            
                             if (isError) {
                                 metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Rainfall:</b> <span style="color:#ef4444; font-weight:900; font-size: 15px;">ERR</span> <span class="alert-badge level-severe" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;"><i class="fa-solid fa-triangle-exclamation"></i> SENSOR FAULT</span></div>`;
                             } else {
