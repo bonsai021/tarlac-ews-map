@@ -540,9 +540,7 @@
             return '#3b82f6'; 
         }
 
-        // ==============================================================================
         // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
-        // ==============================================================================
         const sensorThresholds = {
             'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 },
             
@@ -634,7 +632,6 @@
                     let wlVal = parseFloat(row[7]);
                     let rgVal = parseFloat(row[8]);
 
-                    // --- ARCHIVE CALIBRATION DEDUCTION FOR CAMILING (UPDATED TO 1.26) ---
                     if (!isNaN(wlVal) && (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING')) {
                         wlVal = parseFloat((wlVal - 1.26).toFixed(2));
                     }
@@ -654,10 +651,9 @@
                         metricsArray.push(`<span style="color:${wlColor}; font-weight:900;">${wlVal}m</span>`);
                     }
                     
-                    // --- 24-HOUR ACCUMULATED RAINFALL CALCULATION ---
                     if (!isNaN(rgVal)) {
                         metricsArray.push(`<span style="color:#0ea5e9; font-weight:900;">${rgVal}mm</span>`);
-                        archivedDataMap[historyKey].accumRain += rgVal; // Mathematical sum operation for frontend
+                        archivedDataMap[historyKey].accumRain += rgVal; 
                     }
                     
                     if (metricsArray.length > 0) {
@@ -696,11 +692,30 @@
             var alertCounts = { wlms: 0, tandem: 0 };
             var activeFilter = document.getElementById('sensorFilter').value;
 
+            // NEW: Object to track plotted coordinates for dynamic jittering
+            var plottedCoords = {};
+
             allDownloadedData.forEach(function(row) {
-                var lat = parseFloat(row['LATITUDE']);
-                var lng = parseFloat(row['LONGITUDE']); 
+                var originalLat = parseFloat(row['LATITUDE']);
+                var originalLng = parseFloat(row['LONGITUDE']); 
                 
-                if (!isNaN(lat) && !isNaN(lng)) {
+                if (!isNaN(originalLat) && !isNaN(originalLng)) {
+                    
+                    // --- DYNAMIC COLLISION DETECTION (JITTER LOGIC) ---
+                    var coordKey = originalLat.toFixed(4) + "_" + originalLng.toFixed(4);
+                    var lat = originalLat;
+                    var lng = originalLng;
+                    
+                    if (plottedCoords[coordKey]) {
+                        var offsetMultiplier = plottedCoords[coordKey];
+                        // Shift ~30 meters East and ~10 meters North per overlapping instance
+                        lng = originalLng + (0.0003 * offsetMultiplier);
+                        lat = originalLat + (0.0001 * offsetMultiplier);
+                        plottedCoords[coordKey]++;
+                    } else {
+                        plottedCoords[coordKey] = 1;
+                    }
+                    
                     var rawStatus = (row['Status'] || row['STATUS'] || "").toUpperCase();
                     var rawType = row['DEVICE TYPE'] || "UNKNOWN";
                     var deviceType = rawType.toString().trim().toUpperCase();
@@ -733,7 +748,6 @@
                         var currentWlColor = '#0284c7';
                         var currentWlBadgeHtml = '';
 
-                        // --- WATER LEVEL PARSING ---
                         if ((deviceType.includes('WLMS') || deviceType.includes('TANDEM')) && mainWl) {
                             let isError = mainWl.toString().toUpperCase().includes('ERR');
                             
@@ -796,7 +810,6 @@
                             }
                         }
                         
-                        // --- RAINFALL PARSING & 24H ACCUMULATION UI ---
                         if ((deviceType.includes('ARG') || deviceType.includes('TANDEM') || deviceType.includes('AWS')) && mainRg) {
                             let isError = mainRg.toString().toUpperCase().includes('ERR');
                             if (isError) {
@@ -808,12 +821,10 @@
                                 }
                             }
                             
-                            // Inject the Calculated 24H Accumulation
                             if (archivedDataMap[historyKey] && archivedDataMap[historyKey].accumRain > 0) {
                                 let totalRain = archivedDataMap[historyKey].accumRain.toFixed(1);
                                 
-                                // Color-coded PAGASA-inspired risk thresholds
-                                let rainColor = '#10b981'; // Green
+                                let rainColor = '#10b981'; 
                                 let rainLevel = 'NORMAL';
                                 if (totalRain >= 65 && totalRain < 150) { rainColor = '#f59e0b'; rainLevel = 'MODERATE'; }
                                 else if (totalRain >= 150) { rainColor = '#ef4444'; rainLevel = 'HEAVY'; }
@@ -832,7 +843,6 @@
                             }
                         }
 
-                        // --- AWS FULL TELEMETRY PARSING FROM ANNOTATION COLUMN ---
                         if (deviceType.includes('AWS') && annotation) {
                             metricsHtml += `
                                 <div style="margin-top: 10px; padding: 8px; background: rgba(14, 165, 233, 0.05); border: 1px solid #bae6fd; border-radius: 6px; font-size: 11px; color: #334155;">
@@ -911,6 +921,7 @@
 
                         let popupWidth = guideHtml !== "" ? 420 : 260;
 
+                        // UI Note: We inject originalLat and originalLng so the true database coordinates display, not the offset ones.
                         marker.bindPopup(`
                             <div style="line-height:1.5;">
                                 <strong style="font-size:13px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:10px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; letter-spacing:0.5px;">
@@ -924,7 +935,7 @@
                                         
                                         <div class="gps-box" style="margin: 6px 0; background: #f1f5f9; border: 1px solid #cbd5e1;">
                                             <i class="fa-solid fa-location-crosshairs" style="color:#64748b;"></i> 
-                                            ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                                            ${originalLat.toFixed(5)}, ${originalLng.toFixed(5)}
                                         </div>
                                         
                                         ${metricsHtml}
