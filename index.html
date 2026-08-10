@@ -134,7 +134,6 @@
         .level-critical { background-color: #ef4444; }
         .level-severe { background-color: #7f1d1d; }
 
-        /* Custom Animations for Water Danger Levels */
         @keyframes pulse-level-alert { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
         @keyframes pulse-level-warning { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
         @keyframes pulse-level-critical { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -610,6 +609,15 @@
             allDownloadedData = mainData;
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
+            
+            // --- SYNOPTIC TIME LOGIC (8:00 AM RESET) ---
+            var now = new Date();
+            var synopticStart = new Date(now);
+            if (now.getHours() < 8) {
+                synopticStart.setDate(synopticStart.getDate() - 1);
+            }
+            synopticStart.setHours(8, 0, 0, 0);
+            var synopticStartTime = synopticStart.getTime();
 
             for (let i = archiveData.length - 1; i >= 1; i--) { 
                 let row = archiveData[i];
@@ -619,6 +627,7 @@
                 let safeDateString = rawDate.replace(/-/g, '/');
                 let recordDate = new Date(safeDateString);
 
+                // History chart still requires 24 hours of data
                 if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
                     
                     let deviceType = (row[0] || "UNKNOWN").toString().trim().toUpperCase();
@@ -653,7 +662,10 @@
                     
                     if (!isNaN(rgVal)) {
                         metricsArray.push(`<span style="color:#0ea5e9; font-weight:900;">${rgVal}mm</span>`);
-                        archivedDataMap[historyKey].accumRain += rgVal; 
+                        // Only accumulate rain if the record is on or after the most recent 8:00 AM cutoff
+                        if (recordDate.getTime() >= synopticStartTime) {
+                            archivedDataMap[historyKey].accumRain += rgVal; 
+                        }
                     }
                     
                     if (metricsArray.length > 0) {
@@ -692,7 +704,7 @@
             var alertCounts = { wlms: 0, tandem: 0 };
             var activeFilter = document.getElementById('sensorFilter').value;
 
-            // NEW: Object to track plotted coordinates for dynamic jittering
+            // Object to track plotted coordinates for dynamic jittering
             var plottedCoords = {};
 
             allDownloadedData.forEach(function(row) {
@@ -821,6 +833,7 @@
                                 }
                             }
                             
+                            // Inject the Accumulated Rain with updated UI text
                             if (archivedDataMap[historyKey] && archivedDataMap[historyKey].accumRain > 0) {
                                 let totalRain = archivedDataMap[historyKey].accumRain.toFixed(1);
                                 
@@ -832,7 +845,7 @@
                                 metricsHtml += `
                                     <div style="margin-top: 8px; padding: 8px; background: rgba(14, 165, 233, 0.08); border: 1px solid #7dd3fc; border-radius: 6px; font-size: 11px; color: #334155; display: flex; justify-content: space-between; align-items: center;">
                                         <div>
-                                            <div style="font-weight: 800; color: #0284c7; font-size: 9px; text-transform: uppercase;"><i class="fa-solid fa-cloud-showers-heavy"></i> 24H Accumulated</div>
+                                            <div style="font-weight: 800; color: #0284c7; font-size: 9px; text-transform: uppercase;"><i class="fa-solid fa-cloud-showers-heavy"></i> Accumulated (Since 8 AM)</div>
                                             <div style="font-weight: 900; font-size: 14px; color: #0ea5e9;">${totalRain} <span style="font-size: 10px;">mm</span></div>
                                         </div>
                                         <div style="background: ${rainColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 900; font-size: 9px; letter-spacing: 0.5px;">
@@ -921,7 +934,6 @@
 
                         let popupWidth = guideHtml !== "" ? 420 : 260;
 
-                        // UI Note: We inject originalLat and originalLng so the true database coordinates display, not the offset ones.
                         marker.bindPopup(`
                             <div style="line-height:1.5;">
                                 <strong style="font-size:13px; text-transform:uppercase; color:#0f172a; display:block; margin-bottom:10px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; letter-spacing:0.5px;">
