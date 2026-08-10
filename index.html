@@ -833,7 +833,6 @@
                                 }
                             }
                             
-                            // Inject the Accumulated Rain with updated UI text
                             if (archivedDataMap[historyKey] && archivedDataMap[historyKey].accumRain > 0) {
                                 let totalRain = archivedDataMap[historyKey].accumRain.toFixed(1);
                                 
@@ -845,7 +844,7 @@
                                 metricsHtml += `
                                     <div style="margin-top: 8px; padding: 8px; background: rgba(14, 165, 233, 0.08); border: 1px solid #7dd3fc; border-radius: 6px; font-size: 11px; color: #334155; display: flex; justify-content: space-between; align-items: center;">
                                         <div>
-                                            <div style="font-weight: 800; color: #0284c7; font-size: 9px; text-transform: uppercase;"><i class="fa-solid fa-cloud-showers-heavy"></i> Accumulated (Since 8 AM)</div>
+                                            <div style="font-weight: 800; color: #0284c7; font-size: 9px; text-transform: uppercase;"><i class="fa-solid fa-cloud-showers-heavy"></i> Accumulated</div>
                                             <div style="font-weight: 900; font-size: 14px; color: #0ea5e9;">${totalRain} <span style="font-size: 10px;">mm</span></div>
                                         </div>
                                         <div style="background: ${rainColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 900; font-size: 9px; letter-spacing: 0.5px;">
