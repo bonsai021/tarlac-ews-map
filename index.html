@@ -121,7 +121,7 @@
 
         .indicator-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
         .dot-up { background: #10b981; }     
-        .dot-down { background: #ef4444; }    
+        .dot-down { background: #ef4444; }  
         .dot-maint { background: #f59e0b; }   
         .dot-reloc { background: #8b5cf6; }   
         .dot-fews { font-size: 14px; line-height: 1; margin-right: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); } 
@@ -641,10 +641,6 @@
                     let wlVal = parseFloat(row[7]);
                     let rgVal = parseFloat(row[8]);
 
-                    if (!isNaN(wlVal) && (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING')) {
-                        wlVal = parseFloat((wlVal - 1.26).toFixed(2));
-                    }
-
                     let metricsArray = [];
                     let historyGlowClass = '';
                     
@@ -769,16 +765,9 @@
                                 let cleanWl = parseFloat(mainWl);
                                 if (!isNaN(cleanWl)) {
                                     
-                                    let calibrationNoteHtml = "";
                                     let thresholdNoteHtml = ""; 
                                     
                                     if (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING') {
-                                        cleanWl = parseFloat((cleanWl - 1.26).toFixed(2));
-                                        calibrationNoteHtml = `
-                                            <div style="margin-top: 8px; padding: 8px; background-color: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; font-size: 9px; color: #b45309; line-height: 1.4; border-radius: 0 4px 4px 0;">
-                                                <b><i class="fa-solid fa-wrench"></i> Calibration Note:</b> This value includes a <b>1.26m</b> deduction based on visual estimates of the current water level. The sensor will undergo official recalibration next week. This temporary offset is applied to improve dashboard accuracy.
-                                            </div>
-                                        `;
                                         thresholdNoteHtml = `
                                             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1; font-size: 8px; color: #ef4444; font-weight: 800; text-align: center; letter-spacing: 0.5px;">
                                                 <i class="fa-solid fa-triangle-exclamation"></i> SPILLING LEVEL: 7.85 meters
@@ -792,7 +781,7 @@
                                     currentWlColor = wlStat.color;
                                     currentWlBadgeHtml = ` <span class="alert-badge ${wlStat.class}" style="margin-left: 8px; font-size: 9px; padding: 4px 8px; font-weight:900;">${wlStat.text}</span>`;
                                     
-                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>` + calibrationNoteHtml;
+                                    metricsHtml += `<div style="margin-top: 6px; font-size: 13px;"><b>Water Level:</b> <span style="color:${wlStat.color}; font-weight:900; font-size: 15px;">${cleanWl} m</span> ${currentWlBadgeHtml}</div>`;
                                     
                                     guideHtml = `
                                         <div style="flex: 0.9; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center;">
