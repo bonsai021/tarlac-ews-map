@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tarlac EWS Monitoring Map</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,13 +11,11 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; overflow: hidden; }
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; overflow: hidden; height: 100%; width: 100%; }
         #map { height: 100vh; width: 100vw; background: #f3f4f6; } 
 
         /* --- Top Control Pill --- */
@@ -25,7 +25,7 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            background: rgba(15, 23, 42, 0.75); 
+            background: rgba(15, 23, 42, 0.85); 
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 20px; 
@@ -35,6 +35,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            max-width: 90vw;
         }
 
         .panel-title {
@@ -47,7 +48,7 @@
             padding-right: 15px;
             line-height: 1.3;
             text-align: right;
-            white-space: normal;
+            white-space: nowrap;
         }
 
         /* Sensor Filter Dropdown */
@@ -144,14 +145,11 @@
         .pulse-level-critical { animation: pulse-level-critical 1s infinite; z-index: 1002 !important; }
         .pulse-level-severe { animation: pulse-level-severe 0.5s infinite; z-index: 1002 !important; }
 
-        @keyframes pulse-fews { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* --- Custom Map Markers --- */
+        /* Custom Map Markers */
         .custom-leaflet-icon { background: none; border: none; }
         .map-marker { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.3s ease; z-index: 1000; }
         .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
 
-        /* Notification Badge physically on the map marker */
         .marker-alert-badge {
             position: absolute;
             top: -4px;
@@ -183,7 +181,7 @@
         
         .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 6px 10px; border-radius: 8px; margin-top: 6px; margin-bottom: 6px; font-size: 10px; font-family: monospace; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
 
-        /* --- HORIZONTAL History Log UI --- */
+        /* History Log UI */
         .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
         .history-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         
@@ -212,7 +210,7 @@
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* --- View Chart Button --- */
+        /* View Chart Button */
         .btn-view-chart {
             width: 100%; 
             background: #0f172a; 
@@ -241,7 +239,7 @@
             transform: translateY(-2px);
         }
 
-        /* --- Map Legend Panel --- */
+        /* Map Legend Panel */
         .legend-panel {
             position: absolute;
             bottom: 25px;
@@ -279,12 +277,8 @@
             border-radius: 6px; 
             transition: background 0.2s ease;
         }
-        .legend-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .legend-item:last-child {
-            margin-bottom: 0;
-        }
+        .legend-item:hover { background: rgba(255, 255, 255, 0.1); }
+        .legend-item:last-child { margin-bottom: 0; }
 
         .legend-icon {
             width: 24px;
@@ -313,7 +307,6 @@
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
         }
 
-        /* Legend Notification Badge */
         .legend-notification {
             position: absolute;
             top: -6px;
@@ -333,14 +326,9 @@
             display: none; 
         }
 
-        .legend-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: #cbd5e1;
-            letter-spacing: 0.5px;
-        }
+        .legend-label { font-size: 10px; font-weight: 600; color: #cbd5e1; letter-spacing: 0.5px; }
 
-        /* --- Info Pop-up Modal --- */
+        /* Modals */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
@@ -375,7 +363,6 @@
             background-color: #1e293b; 
         }
 
-        /* --- Center Pop-out Chart Modal --- */
         .chart-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
@@ -401,6 +388,12 @@
         
         .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
 
+        @media (max-width: 768px) {
+            .health-panel { display: none; }
+            .control-panel { flex-direction: column; border-radius: 20px; gap: 8px; top: 10px; padding: 10px 14px; }
+            .panel-title { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding-right: 0; padding-bottom: 6px; text-align: center; }
+            .filter-container { border-right: none; padding-right: 0; }
+        }
     </style>
 </head>
 <body>
@@ -440,7 +433,6 @@
         <div class="health-stat" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;"><div class="stat-label"><span class="dot-fews">🚨</span> FEWS SIRENS</div><div class="stat-value" id="statFews" style="color: #cbd5e1;">0</div></div>
     </div>
 
-    <!-- Clickable Legend Panel with Notification Badges -->
     <div class="legend-panel" id="legendPanel">
         <h3>Sensor Types</h3>
         <div class="legend-item" onclick="openInfoModal('WLMS')">
@@ -471,22 +463,18 @@
         </div>
     </div>
 
-    <!-- Hidden Info Pop-up Modal -->
     <div id="infoModalOverlay" class="modal-overlay" onclick="closeInfoModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="modalTitle">Sensor Info</h3>
                 <button class="modal-close" onclick="closeInfoModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Info will be injected here via Java -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
     <div id="map"></div>
 
-    <!-- Center Pop-out Chart Modal -->
     <div id="chartModalOverlay" class="chart-modal-overlay" onclick="window.closeChart()">
         <div class="chart-modal-content" onclick="event.stopPropagation()">
             <div class="chart-header">
@@ -499,7 +487,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
@@ -515,15 +503,13 @@
             currentBasemap.bringToBack(); 
         });
 
+        window.addEventListener('resize', () => { map.invalidateSize(); });
+
         var ewsBuffers = L.featureGroup().addTo(map); 
         var ewsMarkers = L.featureGroup().addTo(map);
         
-        // ==============================================================================
-        // IMPORTANT: PASTE YOUR TWO PUBLISHED CSV LINKS HERE
-        // ==============================================================================
         var mainCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?output=csv'; 
         var archiveCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?gid=1557794138&single=true&output=csv'; 
-        // ==============================================================================
         
         var allDownloadedData = [];
         var archivedDataMap = {}; 
@@ -539,27 +525,16 @@
             return '#3b82f6'; 
         }
 
-        // SENSOR-SPECIFIC WATER LEVEL THRESHOLDS
         const sensorThresholds = {
             'DEFAULT': { alert: 1.0, warning: 3.0, critical: 5.0, severe: 7.0 },
-            
-            // Camiling
             'CAMILING BRIDGE': { alert: 6.71, warning: 7.40, critical: 7.84, severe: 7.85 },
             'CAMILING': { alert: 6.71, warning: 7.40, critical: 7.84, severe: 7.85 },
-            
-            // Barangobong
             'BARANGOBONG BRIDGE': { alert: 4.0, warning: 5.0, critical: 6.0, severe: 8.0 },
             'BARANGOBONG': { alert: 4.0, warning: 5.0, critical: 6.0, severe: 8.0 },
-            
-            // Lubigan
             'LUBIGAN BRIDGE': { alert: 3.01, warning: 5.01, critical: 7.0, severe: 7.1 },
             'LUBIGAN': { alert: 3.01, warning: 5.01, critical: 7.0, severe: 7.1 },
-            
-            // Bangot 
             'BANGOT BRIDGE': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
             'BANGOT': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
-            
-            // Balanti 
             'BALANTI BRIDGE': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
             'BALANTI WLMS': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 },
             'BALANTI': { alert: 3.0, warning: 5.0, critical: 7.0, severe: 7.01 }
@@ -585,16 +560,17 @@
                     download: true,
                     header: useHeader, 
                     skipEmptyLines: true,
-                    complete: function(results) { resolve(results.data); },
+                    complete: function(results) { resolve(results.data || []); },
                     error: function() { resolve([]); } 
                 });
             });
         }
 
         function getMetric(row, keyword1, keyword2) {
+            if (!row) return null;
             let keys = Object.keys(row);
             let targetKey = keys.find(k => k.toUpperCase().includes(keyword1) || (keyword2 && k.toUpperCase().includes(keyword2)));
-            if (targetKey && row[targetKey] && row[targetKey].trim() !== '') return row[targetKey];
+            if (targetKey && row[targetKey] && String(row[targetKey]).trim() !== '') return row[targetKey];
             return null;
         }
 
@@ -610,25 +586,21 @@
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
             
-            // --- SYNOPTIC TIME LOGIC (8:00 AM RESET) ---
             var now = new Date();
             var synopticStart = new Date(now);
-            if (now.getHours() < 8) {
-                synopticStart.setDate(synopticStart.getDate() - 1);
-            }
+            if (now.getHours() < 8) synopticStart.setDate(synopticStart.getDate() - 1);
             synopticStart.setHours(8, 0, 0, 0);
             var synopticStartTime = synopticStart.getTime();
 
             for (let i = archiveData.length - 1; i >= 1; i--) { 
                 let row = archiveData[i];
-                if (!row || row.length < 10) continue; 
+                if (!row || row.length < 9) continue; 
                 
                 let rawDate = row[12] || row[6] || ""; 
-                let safeDateString = rawDate.replace(/-/g, '/');
+                let safeDateString = String(rawDate).replace(/-/g, '/');
                 let recordDate = new Date(safeDateString);
 
-                // History chart still requires 24 hours of data
-                if (!isNaN(recordDate) && recordDate.getTime() >= twentyFourHoursAgo) {
+                if (!isNaN(recordDate.getTime()) && recordDate.getTime() >= twentyFourHoursAgo) {
                     
                     let deviceType = (row[0] || "UNKNOWN").toString().trim().toUpperCase();
                     let sensorName = (row[1] || "UNKNOWN").toString().trim().toUpperCase();
@@ -658,7 +630,6 @@
                     
                     if (!isNaN(rgVal)) {
                         metricsArray.push(`<span style="color:#0ea5e9; font-weight:900;">${rgVal}mm</span>`);
-                        // Only accumulate rain if the record is on or after the most recent 8:00 AM cutoff
                         if (recordDate.getTime() >= synopticStartTime) {
                             archivedDataMap[historyKey].accumRain += rgVal; 
                         }
@@ -700,7 +671,6 @@
             var alertCounts = { wlms: 0, tandem: 0 };
             var activeFilter = document.getElementById('sensorFilter').value;
 
-            // Object to track plotted coordinates for dynamic jittering
             var plottedCoords = {};
 
             allDownloadedData.forEach(function(row) {
@@ -709,14 +679,12 @@
                 
                 if (!isNaN(originalLat) && !isNaN(originalLng)) {
                     
-                    // --- DYNAMIC COLLISION DETECTION (JITTER LOGIC) ---
                     var coordKey = originalLat.toFixed(4) + "_" + originalLng.toFixed(4);
                     var lat = originalLat;
                     var lng = originalLng;
                     
                     if (plottedCoords[coordKey]) {
                         var offsetMultiplier = plottedCoords[coordKey];
-                        // Shift ~30 meters East and ~10 meters North per overlapping instance
                         lng = originalLng + (0.0003 * offsetMultiplier);
                         lat = originalLat + (0.0001 * offsetMultiplier);
                         plottedCoords[coordKey]++;
@@ -766,7 +734,6 @@
                                 if (!isNaN(cleanWl)) {
                                     
                                     let thresholdNoteHtml = ""; 
-                                    
                                     if (sensorName === 'CAMILING BRIDGE' || sensorName === 'CAMILING') {
                                         thresholdNoteHtml = `
                                             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1; font-size: 8px; color: #ef4444; font-weight: 800; text-align: center; letter-spacing: 0.5px;">
@@ -858,9 +825,7 @@
                         }
 
                         var historyHtml = "";
-                        
                         if (archivedDataMap[historyKey] && archivedDataMap[historyKey].html.length > 0) {
-                            
                             archivedDataMap[historyKey].currentWlColor = currentWlColor;
                             archivedDataMap[historyKey].currentWlBadgeHtml = currentWlBadgeHtml;
 
@@ -913,13 +878,7 @@
 
                         var marker = L.marker([lat, lng], { icon: customIcon });
                         
-                        marker.deviceData = {
-                            type: deviceType,
-                            status: rawStatus,
-                            lat: lat,
-                            lng: lng
-                        };
-
+                        marker.deviceData = { type: deviceType, status: rawStatus, lat: lat, lng: lng };
                         let popupWidth = guideHtml !== "" ? 420 : 260;
 
                         marker.bindPopup(`
@@ -931,7 +890,7 @@
                                 <div style="display: flex; gap: 15px; margin-bottom: 12px; align-items: stretch;">
                                     <div style="flex: 1.2; font-size:12px; color:#334155; display: flex; flex-direction: column; justify-content: center;">
                                         <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Type:</span> ${deviceType}</div>
-                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Status:</span> <span style="font-weight:900; color:${statusColor}">${row['Status']}</span></div>
+                                        <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:10px; text-transform:uppercase; font-weight:800;">Status:</span> <span style="font-weight:900; color:${statusColor}">${row['Status'] || row['STATUS'] || ''}</span></div>
                                         
                                         <div class="gps-box" style="margin: 6px 0; background: #f1f5f9; border: 1px solid #cbd5e1;">
                                             <i class="fa-solid fa-location-crosshairs" style="color:#64748b;"></i> 
@@ -940,10 +899,8 @@
                                         
                                         ${metricsHtml}
                                     </div>
-                                    
                                     ${guideHtml}
                                 </div>
-                                
                                 ${historyHtml}
 
                                 <div style="margin-top:10px; font-size:9px; color:#94a3b8; text-align:right; font-weight:600;">
@@ -956,20 +913,12 @@
             });
 
             var wlmsBadge = document.getElementById('wlms-badge');
-            if (alertCounts.wlms > 0) {
-                wlmsBadge.style.display = 'flex';
-                wlmsBadge.innerText = alertCounts.wlms;
-            } else {
-                wlmsBadge.style.display = 'none';
-            }
+            if (alertCounts.wlms > 0) { wlmsBadge.style.display = 'flex'; wlmsBadge.innerText = alertCounts.wlms; }
+            else { wlmsBadge.style.display = 'none'; }
 
             var tandemBadge = document.getElementById('tandem-badge');
-            if (alertCounts.tandem > 0) {
-                tandemBadge.style.display = 'flex';
-                tandemBadge.innerText = alertCounts.tandem;
-            } else {
-                tandemBadge.style.display = 'none';
-            }
+            if (alertCounts.tandem > 0) { tandemBadge.style.display = 'flex'; tandemBadge.innerText = alertCounts.tandem; }
+            else { tandemBadge.style.display = 'none'; }
 
             document.getElementById('statTotal').innerText = `${counts.total} Total`;
             document.getElementById('statUp').innerText = counts.up;
@@ -986,11 +935,9 @@
 
         map.on('popupopen', function(e) {
             ewsBuffers.clearLayers(); 
-            
             if (e.popup && e.popup._source && e.popup._source.deviceData) {
                 var data = e.popup._source.deviceData;
                 if ((data.type.includes('ARG') || data.type.includes('TANDEM') || data.type.includes('AWS')) && !data.status.includes('RELOCATION')) {
-                    
                     var animatedCircle = L.circle([data.lat, data.lng], {
                         radius: 0, color: '#0ea5e9', weight: 1.5, opacity: 0.5, fillColor: '#0ea5e9', fillOpacity: 0.1, interactive: false 
                     }).addTo(ewsBuffers);
@@ -1003,7 +950,6 @@
                         if (!startTime) startTime = currentTime;
                         var progress = Math.min((currentTime - startTime) / duration, 1);
                         var easeOutProgress = 1 - Math.pow(1 - progress, 3);
-                        
                         animatedCircle.setRadius(maxRadius * easeOutProgress);
                         if (progress < 1) requestAnimationFrame(animate); 
                     }
@@ -1012,18 +958,14 @@
             }
         });
 
-        map.on('popupclose', function() {
-            ewsBuffers.clearLayers();
-        });
+        map.on('popupclose', function() { ewsBuffers.clearLayers(); });
 
         window.openChart = function(encodedKey) {
             var historyKey = decodeURIComponent(encodedKey);
             var dataObj = archivedDataMap[historyKey];
-            
             if (!dataObj || dataObj.raw.length === 0) return;
 
             var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
-
             var lastUnderscoreIndex = historyKey.lastIndexOf('_');
             var sensorNameOnly = historyKey.substring(0, lastUnderscoreIndex);
             var t = sensorThresholds[sensorNameOnly] || sensorThresholds['DEFAULT'];
@@ -1039,13 +981,9 @@
             document.getElementById('chartModalOverlay').classList.add('open');
 
             var ctx = document.getElementById('historyChart').getContext('2d');
-
-            if (currentChartInstance) {
-                currentChartInstance.destroy();
-            }
+            if (currentChartInstance) { currentChartInstance.destroy(); }
 
             var datasets = [];
-            
             if (wlData.some(d => d !== null)) {
                 datasets.push({
                     label: 'Water Level (m)',
@@ -1060,10 +998,9 @@
                     tension: 0.45, 
                     yAxisID: 'y'
                 });
-
-                datasets.push({ label: 'Alert Level', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Warning Level', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
-                datasets.push({ label: 'Critical Level', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, pointHitRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Alert Level', data: labels.map(() => t.alert), borderColor: '#facc15', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Warning Level', data: labels.map(() => t.warning), borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: 'y' });
+                datasets.push({ label: 'Critical Level', data: labels.map(() => t.critical), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: 'y' });
             }
             
             if (rgData.some(d => d !== null)) {
@@ -1084,57 +1021,33 @@
 
             currentChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
+                data: { labels: labels, datasets: datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    layout: {
-                        padding: { bottom: 5 }
-                    },
+                    layout: { padding: { bottom: 5 } },
                     color: '#cbd5e1',
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
                         x: {
-                            ticks: { 
-                                color: '#94a3b8', 
-                                font: { family: 'Inter', size: 9 }, 
-                                maxRotation: 0, 
-                                autoSkipPadding: 20 
-                            },
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 9 }, maxRotation: 0, autoSkipPadding: 20 },
                             grid: { display: false } 
                         },
                         y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
+                            type: 'linear', display: true, position: 'left',
                             title: { display: true, text: 'Meters (m)', color: wlColor, font: { size: 10, weight: 'bold'} },
                             ticks: { color: wlColor },
                             grid: { color: 'rgba(255,255,255,0.05)' }
                         },
                         y1: {
-                            type: 'linear',
-                            display: datasets.length > 1 && rgData.some(d => d !== null), 
-                            position: 'right',
+                            type: 'linear', display: datasets.length > 1 && rgData.some(d => d !== null), position: 'right',
                             title: { display: true, text: 'Millimeters (mm)', color: '#0ea5e9', font: { size: 10, weight: 'bold'} },
                             ticks: { color: '#0ea5e9' },
                             grid: { drawOnChartArea: false } 
                         }
                     },
                     plugins: {
-                        legend: {
-                            labels: { 
-                                color: '#f8fafc', 
-                                font: { family: 'Inter', size: 11, weight: 'bold' }, 
-                                boxWidth: 24, 
-                                boxHeight: 2 
-                            }
-                        },
+                        legend: { labels: { color: '#f8fafc', font: { family: 'Inter', size: 11, weight: 'bold' }, boxWidth: 24, boxHeight: 2 } },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
                             titleColor: '#94a3b8',
@@ -1150,18 +1063,14 @@
                             titleMarginBottom: 10,
                             bodySpacing: 8,
                             displayColors: true,
-                            filter: function(tooltipItem) {
-                                return tooltipItem.dataset.label === 'Water Level (m)' || tooltipItem.dataset.label === 'Rainfall (mm)';
-                            },
+                            filter: function(tooltipItem) { return tooltipItem.dataset.label === 'Water Level (m)' || tooltipItem.dataset.label === 'Rainfall (mm)'; },
                             callbacks: {
                                 title: function(tooltipItems) {
                                     var index = tooltipItems[0].dataIndex;
                                     var pointData = sortedData[index];
                                     return pointData.dateStr + ' • ' + pointData.timeStr;
                                 },
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y;
-                                }
+                                label: function(context) { return context.dataset.label + ': ' + context.parsed.y; }
                             }
                         }
                     }
@@ -1174,11 +1083,11 @@
         }
 
         const sensorInfo = {
-            'WLMS': '<img src="wlms.JPG" alt="WLMS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure the real-time distance from the sensor down to the water surface, providing highly accurate river or flood water elevation data.',
-            'ARG': '<img src="arg.JPG" alt="ARG" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Rain Gauge (ARG)</strong><br><br>These instruments measure the amount of rainfall over a set period. They typically use a tipping bucket mechanism that automatically records and transmits accumulated precipitation data.',
-            'TANDEM': '<img src="tandem.JPG" alt="TANDEM" class="modal-image" onerror="this.style.display=\'none\'"><strong>TANDEM Station</strong><br><br>A dual-purpose monitoring station that combines both a Water Level Monitoring System (WLMS) and an Automated Rain Gauge (ARG) in a single location for comprehensive hydrometeorological data.',
-            'AWS': '<img src="aws.JPG" alt="AWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Weather Station (AWS)</strong><br><br>These stations monitor a comprehensive suite of meteorological parameters including temperature, humidity, atmospheric pressure, wind speed/direction, and solar radiation to provide real-time hyper-local weather conditions.',
-            'FEWS': '<img src="fews.JPG" alt="FEWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community-based siren stations strategically placed in vulnerable areas. They are triggered remotely to alert residents of impending flood threats, signaling the need for immediate evacuation.'
+            'WLMS': '<img src="wlms.JPG" alt="WLMS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Water Level Monitoring System (WLMS)</strong><br><br>These sensors utilize ultrasonic or radar technology to measure real-time distance to the water surface.',
+            'ARG': '<img src="arg.JPG" alt="ARG" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Rain Gauge (ARG)</strong><br><br>Measures rainfall amount over specific time intervals using a tipping bucket mechanism.',
+            'TANDEM': '<img src="tandem.JPG" alt="TANDEM" class="modal-image" onerror="this.style.display=\'none\'"><strong>TANDEM Station</strong><br><br>Combines both Water Level (WLMS) and Rain Gauge (ARG) monitoring into a single unified telemetry post.',
+            'AWS': '<img src="aws.JPG" alt="AWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Automated Weather Station (AWS)</strong><br><br>Tracks ambient weather dynamics including temperature, humidity, wind velocity, and solar radiation.',
+            'FEWS': '<img src="fews.JPG" alt="FEWS" class="modal-image" onerror="this.style.display=\'none\'"><strong>Flood Early Warning System (FEWS) Siren</strong><br><br>Community warning sirens activated to inform local populations during impending high-water and flash-flood events.'
         };
 
         window.openInfoModal = function(type) {
