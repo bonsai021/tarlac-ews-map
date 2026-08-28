@@ -491,8 +491,8 @@
         var map = L.map('map', { zoomControl: false }).setView([15.48, 120.59], 10);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
-        var darkBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
-        var lightBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
+        var darkBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2f3o_1_c964acdf55ecfb4bab3ccedd', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
+        var lightBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2f3o_1_c964acdf55ecfb4bab3ccedd', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
         var currentBasemap = lightBasemap;
         currentBasemap.addTo(map);
 
