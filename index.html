@@ -88,6 +88,29 @@
         }
         .filter-container select option { background: #1e293b; color: white; }
 
+        /* Export Buttons */
+        .btn-export {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #38bdf8;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-export:hover {
+            background-color: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #f8fafc;
+        }
+
         /* iOS-Style Theme Switch */
         .switch-container { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
         .switch-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
@@ -393,6 +416,7 @@
             .control-panel { flex-direction: column; border-radius: 20px; gap: 8px; top: 10px; padding: 10px 14px; }
             .panel-title { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding-right: 0; padding-bottom: 6px; text-align: center; }
             .filter-container { border-right: none; padding-right: 0; }
+            .export-container { border-right: none; padding-right: 0; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.2); justify-content: center; width: 100%; }
         }
     </style>
 </head>
@@ -412,6 +436,15 @@
                 <option value="AWS">AWS (Weather Station)</option>
                 <option value="FEWS">FEWS (Sirens)</option>
             </select>
+        </div>
+
+        <div class="export-container" style="border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px; display: flex; gap: 8px;">
+            <button class="btn-export" onclick="exportHistoricalData(7)" title="Download 7-Day Trend">
+                <i class="fa-solid fa-file-csv"></i> 7D
+            </button>
+            <button class="btn-export" onclick="exportHistoricalData(14)" title="Download 14-Day Trend">
+                <i class="fa-solid fa-file-csv"></i> 14D
+            </button>
         </div>
 
         <div class="switch-container">
@@ -512,6 +545,7 @@
         var archiveCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?gid=1557794138&single=true&output=csv'; 
         
         var allDownloadedData = [];
+        var globalArchiveData = []; // Added for export functionality
         var archivedDataMap = {}; 
         var currentChartInstance = null; 
 
@@ -583,6 +617,8 @@
             ]);
 
             allDownloadedData = mainData;
+            globalArchiveData = archiveData; // Store globally for exporting functionality
+            
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
             
@@ -661,6 +697,46 @@
 
         fetchAllData();
         setInterval(fetchAllData, 60000); 
+
+        // New Export Function
+        window.exportHistoricalData = function(days) {
+            if (!globalArchiveData || globalArchiveData.length === 0) {
+                alert("Data is still loading. Please try again in a few seconds.");
+                return;
+            }
+
+            // Calculate cutoff timestamp
+            var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
+
+            // Filter the data based on your date columns
+            var filteredData = globalArchiveData.filter(function(row, index) {
+                if (index === 0) return true; // Always keep the header row
+                
+                if (!row || row.length < 9) return false;
+                
+                let rawDate = row[12] || row[6] || ""; 
+                let safeDateString = String(rawDate).replace(/-/g, '/');
+                let recordDate = new Date(safeDateString);
+
+                return !isNaN(recordDate.getTime()) && recordDate.getTime() >= cutoffTime;
+            });
+
+            // Convert array back to CSV string using PapaParse
+            var csvContent = Papa.unparse(filteredData);
+
+            // Create a Blob and trigger the download
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            var url = URL.createObjectURL(blob);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `CBFEWS_Data_${days}_Days_Trend.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
 
         document.getElementById('sensorFilter').addEventListener('change', renderMapData);
 
