@@ -88,70 +88,6 @@
         }
         .filter-container select option { background: #1e293b; color: white; }
 
-        /* All-Network Export Buttons in Top Bar */
-        .export-container {
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding-right: 15px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-export {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #38bdf8;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-family: 'Inter', sans-serif;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-export:hover {
-            background-color: rgba(56, 189, 248, 0.2);
-            border-color: #38bdf8;
-            color: #f8fafc;
-        }
-
-        /* Per-Sensor Popup Export Buttons */
-        .sensor-export-group {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .btn-sensor-export {
-            flex: 1;
-            background: #f8fafc;
-            color: #0284c7;
-            border: 1px solid #bae6fd;
-            padding: 8px 6px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .btn-sensor-export:hover {
-            background: #0284c7;
-            color: #ffffff;
-            border-color: #0284c7;
-            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
-        }
-
         /* iOS-Style Theme Switch */
         .switch-container { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
         .switch-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
@@ -162,28 +98,78 @@
         input:checked + .slider { background-color: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.5); }
         input:checked + .slider:before { transform: translateX(14px); background-color: #ffffff; }
 
-        /* --- Network Health Dashboard --- */
-        .health-panel {
+        /* --- Global Export Panel (Left Side under Zoom) --- */
+        .main-export-panel {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 90px;
+            left: 15px;
             z-index: 1000;
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px;
             color: white;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 200px;
+            width: 190px;
         }
+        .main-export-panel h3 {
+            margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 6px;
+        }
+        .main-export-panel select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+        .main-export-panel select option { background: #1e293b; color: white; }
+        .main-export-panel button {
+            width: 100%; background: #0284c7; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .main-export-panel button:hover { background: #0369a1; }
 
+        /* --- Per-Sensor Popup Export UI --- */
+        .popup-export-container {
+            display: flex; gap: 6px; margin-top: 8px; align-items: stretch;
+        }
+        .popup-export-select {
+            flex: 2; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 6px; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 600; outline: none; margin-bottom: 0 !important; cursor: pointer;
+        }
+        .btn-sensor-export {
+            flex: 1.2; background: #0284c7; color: #ffffff; border: none; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .btn-sensor-export:hover { background: #0369a1; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25); }
+
+        /* --- Chart Modal Export UI --- */
+        .chart-export-container {
+            display: flex; gap: 6px; align-items: center; margin-right: 10px;
+        }
+        .chart-export-select {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: #f8fafc; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer;
+        }
+        .chart-export-select option { background: #1e293b; color: white; }
+        .btn-chart-export {
+            background: #0284c7; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 5px;
+        }
+        .btn-chart-export:hover { background: #0369a1; }
+
+        /* --- Network Health Dashboard --- */
+        .health-panel {
+            position: absolute; top: 15px; right: 15px; z-index: 1000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 200px;
+        }
         .health-panel h3 { margin: 0 0 12px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-weight: 700; display: flex; justify-content: space-between; }
         .health-stat { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .health-stat:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
         .stat-label { font-size: 10px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
         .stat-value { font-size: 14px; font-weight: 800; color: #f8fafc; }
-
         .indicator-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
         .dot-up { background: #10b981; }     
         .dot-down { background: #ef4444; }  
@@ -215,23 +201,7 @@
         .map-marker:hover { transform: scale(1.15); z-index: 1000 !important; }
 
         .marker-alert-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            font-size: 10px;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            z-index: 2000;
-            animation: pulse-level-critical 1.5s infinite;
+            position: absolute; top: -4px; right: -4px; background-color: #ef4444; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border: 1px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.4); z-index: 2000; animation: pulse-level-critical 1.5s infinite;
         }
 
         /* Leaflet Controls */
@@ -242,215 +212,61 @@
         /* Popup Styling */
         .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); font-family: 'Inter', sans-serif; }
         .leaflet-popup-content { margin: 16px; color: #1f2937; } 
-        
         .gps-box { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); padding: 6px 10px; border-radius: 8px; margin-top: 6px; margin-bottom: 6px; font-size: 10px; font-family: monospace; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
 
         /* History Log UI */
         .history-container { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
         .history-title { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        
-        .history-log { 
-            display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; 
-            background: transparent; padding: 4px 0 12px 0; max-width: 100%;
-        }
-        
-        .history-item { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 0 0 auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px;
-            padding: 8px 12px; min-width: 65px; box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-            transition: all 0.3s ease;
-        }
-
+        .history-log { display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; background: transparent; padding: 4px 0 12px 0; max-width: 100%; }
+        .history-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; min-width: 65px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); transition: all 0.3s ease; }
         .history-item.glow-alert { border-color: #facc15; box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); background: rgba(250, 204, 21, 0.05); }
         .history-item.glow-warning { border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05); }
         .history-item.glow-critical { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); }
         .history-item.glow-severe { border-color: #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.6); background: rgba(127, 29, 29, 0.1); }
-        
         .history-time { font-weight: 800; color: #475569; font-size: 9px; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; width: 100%; text-align: center; letter-spacing: 0.5px;}
         .history-metrics { font-weight: 900; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        
         .history-log::-webkit-scrollbar { height: 6px; } 
         .history-log::-webkit-scrollbar-track { background: transparent; }
         .history-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .history-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* View Chart Button */
-        .btn-view-chart {
-            width: 100%; 
-            background: #0f172a; 
-            color: #f8fafc; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-            font-family: 'Inter', sans-serif;
-            font-weight: 800;
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            cursor: pointer; 
-            margin-top: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn-view-chart:hover { 
-            background: #1e293b; 
-            border-color: #38bdf8; 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            transform: translateY(-2px);
-        }
+        .btn-view-chart { width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; margin-top: 8px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-view-chart:hover { background: #1e293b; border-color: #38bdf8; box-shadow: 0 6px 12px rgba(0,0,0,0.2); transform: translateY(-2px); }
 
         /* Map Legend Panel */
-        .legend-panel {
-            position: absolute;
-            bottom: 25px;
-            left: 15px;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 170px;
-            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .legend-panel h3 {
-            margin: 0 0 12px 0;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-            cursor: pointer; 
-            padding: 4px; 
-            border-radius: 6px; 
-            transition: background 0.2s ease;
-        }
+        .legend-panel { position: absolute; bottom: 25px; left: 15px; z-index: 1000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 170px; transition: transform 0.5s ease; }
+        .legend-panel h3 { margin: 0 0 12px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-weight: 700; }
+        .legend-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s ease; }
         .legend-item:hover { background: rgba(255, 255, 255, 0.1); }
         .legend-item:last-child { margin-bottom: 0; }
-
-        .legend-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background-color: #475569;
-            border: 2px solid #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            position: relative;
-        }
-
-        .legend-icon.fews-icon {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            font-size: 16px;
-            width: auto;
-            height: auto;
-            margin-left: 2px;
-            margin-right: 4px;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
-        }
-
-        .legend-notification {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #ef4444;
-            color: white;
-            font-size: 8px;
-            font-weight: bold;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #0f172a;
-            animation: pulse-level-critical 2s infinite;
-            display: none; 
-        }
-
+        .legend-icon { width: 24px; height: 24px; border-radius: 50%; background-color: #475569; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); position: relative; }
+        .legend-icon.fews-icon { background-color: transparent; border: none; box-shadow: none; font-size: 16px; width: auto; height: auto; margin-left: 2px; margin-right: 4px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
+        .legend-notification { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; font-size: 8px; font-weight: bold; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #0f172a; animation: pulse-level-critical 2s infinite; display: none; }
         .legend-label { font-size: 10px; font-weight: 600; color: #cbd5e1; letter-spacing: 0.5px; }
 
         /* Modals */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-            z-index: 3000; display: none; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 3000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
         .modal-overlay.active { display: flex; opacity: 1; }
-        
-        .modal-content {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 20px; width: 320px; color: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
+        .modal-content { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; width: 320px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.3s ease; }
         .modal-overlay.active .modal-content { transform: translateY(0); }
-        
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
         .modal-header h3 { margin: 0; font-size: 14px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px; }
         .modal-close { background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .modal-close:hover { color: #ef4444; }
-        
         .modal-body { font-size: 12px; line-height: 1.6; color: #cbd5e1; }
         .modal-body strong { color: #38bdf8; }
+        .modal-image { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1e293b; }
 
-        .modal-image {
-            width: 100%;
-            height: 140px; 
-            object-fit: cover; 
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: #1e293b; 
-        }
-
-        .chart-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
-            z-index: 4000; display: none; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
+        .chart-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 4000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
         .chart-modal-overlay.open { display: flex; opacity: 1; }
-        
-        .chart-modal-content {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px; padding: 20px 25px; width: 90%; max-width: 1000px; height: 75vh;
-            color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-            transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            display: flex; flex-direction: column;
-        }
+        .chart-modal-content { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 20px 25px; width: 90%; max-width: 1000px; height: 75vh; color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.6); transform: scale(0.95) translateY(10px); transition: all 0.3s ease; display: flex; flex-direction: column; }
         .chart-modal-overlay.open .chart-modal-content { transform: scale(1) translateY(0); }
-        
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-size: 14px; font-weight: 900; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-        
         .chart-actions { display: flex; align-items: center; gap: 8px; }
         .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .chart-close:hover { background: #ef4444; color: white; }
-        
         .chart-container { flex-grow: 1; position: relative; width: 100%; min-height: 0; }
 
         @media (max-width: 768px) {
@@ -458,7 +274,7 @@
             .control-panel { flex-direction: column; border-radius: 20px; gap: 8px; top: 10px; padding: 10px 14px; }
             .panel-title { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding-right: 0; padding-bottom: 6px; text-align: center; }
             .filter-container { border-right: none; padding-right: 0; }
-            .export-container { border-right: none; padding-right: 0; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.2); justify-content: center; width: 100%; }
+            .main-export-panel { top: auto; bottom: 15px; left: 15px; right: 15px; width: auto; z-index: 2500; }
         }
     </style>
 </head>
@@ -480,15 +296,6 @@
             </select>
         </div>
 
-        <div class="export-container" title="Export all network data">
-            <button class="btn-export" onclick="exportHistoricalData(7)" title="Download all network 7-Day data">
-                <i class="fa-solid fa-file-csv"></i> All 7D
-            </button>
-            <button class="btn-export" onclick="exportHistoricalData(14)" title="Download all network 14-Day data">
-                <i class="fa-solid fa-file-csv"></i> All 14D
-            </button>
-        </div>
-
         <div class="switch-container">
             <span class="switch-label">Dark</span>
             <label class="switch">
@@ -497,6 +304,27 @@
             </label>
             <span class="switch-label">Light</span>
         </div>
+    </div>
+
+    <!-- NEW MAIN EXPORT PANEL -->
+    <div class="main-export-panel">
+        <h3><i class="fa-solid fa-file-csv"></i> Data Export</h3>
+        
+        <select id="exportStation">
+            <option value="ALL">All Stations</option>
+            <!-- Dynamically populated from script -->
+        </select>
+        
+        <select id="exportTimeframe">
+            <option value="7">Last 7 Days</option>
+            <option value="14">Last 14 Days</option>
+            <option value="8-2026">August 2026</option>
+            <option value="9-2026">September 2026</option>
+        </select>
+        
+        <button onclick="window.executeGlobalExport()">
+            <i class="fa-solid fa-download"></i> Download CSV
+        </button>
     </div>
 
     <div class="health-panel">
@@ -555,12 +383,17 @@
             <div class="chart-header">
                 <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
                 <div class="chart-actions">
-                    <button class="btn-export" id="chartExport7Btn" onclick="window.exportCurrentChartSensor(7)" title="Download 7D CSV for this sensor">
-                        <i class="fa-solid fa-file-csv"></i> 7D CSV
-                    </button>
-                    <button class="btn-export" id="chartExport14Btn" onclick="window.exportCurrentChartSensor(14)" title="Download 14D CSV for this sensor">
-                        <i class="fa-solid fa-file-csv"></i> 14D CSV
-                    </button>
+                    <div class="chart-export-container">
+                        <select id="chartExportTimeframe" class="chart-export-select">
+                            <option value="7">Last 7 Days</option>
+                            <option value="14">Last 14 Days</option>
+                            <option value="8-2026">August 2026</option>
+                            <option value="9-2026">September 2026</option>
+                        </select>
+                        <button class="btn-chart-export" onclick="window.executeChartExport()">
+                            <i class="fa-solid fa-download"></i> DL
+                        </button>
+                    </div>
                     <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
@@ -670,6 +503,22 @@
             allDownloadedData = mainData;
             globalArchiveData = archiveData;
             
+            // Populate the Station Dropdown dynamically
+            var stationSet = new Set();
+            for (let i = 1; i < archiveData.length; i++) {
+                if (archiveData[i] && archiveData[i].length > 1) {
+                    var sName = archiveData[i][1].toString().trim().toUpperCase();
+                    if(sName && sName !== "NAME" && sName !== "STATION") {
+                        stationSet.add(sName);
+                    }
+                }
+            }
+            var stationSelect = document.getElementById('exportStation');
+            stationSelect.innerHTML = '<option value="ALL">All Stations</option>';
+            Array.from(stationSet).sort().forEach(s => {
+                stationSelect.innerHTML += `<option value="${s}">${s}</option>`;
+            });
+
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
             
@@ -749,40 +598,29 @@
         fetchAllData();
         setInterval(fetchAllData, 60000); 
 
-        // Export All Network Data
-        window.exportHistoricalData = function(days) {
+        // --- NEW EXPORT LOGIC ---
+        window.executeGlobalExport = function() {
+            var station = document.getElementById('exportStation').value;
+            var timeframe = document.getElementById('exportTimeframe').value;
+            triggerExport(station, timeframe, "ALL");
+        }
+
+        window.executePopupExport = function(safeName, safeType) {
+            var selectId = "export_" + safeName.replace(/[^a-zA-Z0-9]/g, '');
+            var timeframe = document.getElementById(selectId).value;
+            triggerExport(decodeURIComponent(safeName), timeframe, decodeURIComponent(safeType));
+        }
+
+        window.executeChartExport = function() {
+            var timeframe = document.getElementById('chartExportTimeframe').value;
+            triggerExport(activeChartSensor.name, timeframe, activeChartSensor.type);
+        }
+
+        window.triggerExport = function(targetSensor, timeframe, targetType) {
             if (!globalArchiveData || globalArchiveData.length === 0) {
                 alert("Archive data is still loading. Please try again in a few seconds.");
                 return;
             }
-
-            var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
-
-            var filteredData = globalArchiveData.filter(function(row, index) {
-                if (index === 0) return true; // Keep header row
-                if (!row || row.length < 9) return false;
-                
-                let rawDate = row[12] || row[6] || ""; 
-                let safeDateString = String(rawDate).replace(/-/g, '/');
-                let recordDate = new Date(safeDateString);
-
-                return !isNaN(recordDate.getTime()) && recordDate.getTime() >= cutoffTime;
-            });
-
-            downloadCsvFile(filteredData, `ALL_SENSORS_${days}D_Trend.csv`);
-        };
-
-        // Export Single Specific Sensor Data
-        window.exportSensorData = function(encSensor, encType, days) {
-            var targetSensor = decodeURIComponent(encSensor).trim().toUpperCase();
-            var targetDevice = decodeURIComponent(encType).trim().toUpperCase();
-
-            if (!globalArchiveData || globalArchiveData.length === 0) {
-                alert("Archive data is still loading. Please try again in a few seconds.");
-                return;
-            }
-
-            var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
 
             var filteredData = globalArchiveData.filter(function(row, index) {
                 if (index === 0) return true; // Keep header row
@@ -791,44 +629,47 @@
                 var dType = (row[0] || "").toString().trim().toUpperCase();
                 var sName = (row[1] || "").toString().trim().toUpperCase();
 
-                if (sName !== targetSensor || dType !== targetDevice) {
-                    return false;
-                }
+                if (targetSensor !== "ALL" && sName !== targetSensor) return false;
+                if (targetSensor !== "ALL" && targetType !== "ALL" && dType !== targetType) return false;
 
                 let rawDate = row[12] || row[6] || ""; 
                 let safeDateString = String(rawDate).replace(/-/g, '/');
                 let recordDate = new Date(safeDateString);
+                
+                if (isNaN(recordDate.getTime())) return false;
 
-                return !isNaN(recordDate.getTime()) && recordDate.getTime() >= cutoffTime;
+                if (timeframe.includes("-")) {
+                    // Specific Month (e.g., "8-2026")
+                    var parts = timeframe.split("-");
+                    var reqMonth = parseInt(parts[0]);
+                    var reqYear = parseInt(parts[1]);
+                    return (recordDate.getMonth() + 1 === reqMonth && recordDate.getFullYear() === reqYear);
+                } else {
+                    // Rolling Days (e.g., 7, 14)
+                    var days = parseInt(timeframe);
+                    var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
+                    return recordDate.getTime() >= cutoffTime;
+                }
             });
 
             if (filteredData.length <= 1) {
-                alert(`No records found for ${targetSensor} (${targetDevice}) in the last ${days} days.`);
+                alert("No records found for the selected criteria.");
                 return;
             }
 
-            let cleanFileName = targetSensor.replace(/[^A-Z0-9]/gi, '_').replace(/_+/g, '_');
-            downloadCsvFile(filteredData, `${cleanFileName}_${targetDevice}_${days}D_Trend.csv`);
+            let cleanSensorName = targetSensor === "ALL" ? "All_Sensors" : targetSensor.replace(/[^A-Z0-9]/gi, '_');
+            let dateLabel = timeframe.includes("-") ? timeframe.replace("-", "_") : timeframe + "D";
+            downloadCsvFile(filteredData, `${cleanSensorName}_${dateLabel}_Trend.csv`);
         };
 
-        // Export directly from open chart
-        window.exportCurrentChartSensor = function(days) {
-            if (activeChartSensor.name && activeChartSensor.type) {
-                window.exportSensorData(encodeURIComponent(activeChartSensor.name), encodeURIComponent(activeChartSensor.type), days);
-            }
-        };
-
-        // Helper function to trigger browser download
         function downloadCsvFile(dataArray, filename) {
             var csvContent = Papa.unparse(dataArray);
             var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             var link = document.createElement("a");
             var url = URL.createObjectURL(blob);
-            
             link.setAttribute("href", url);
             link.setAttribute("download", filename);
             link.style.visibility = 'hidden';
-            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1004,6 +845,7 @@
                             let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
                             let safeSensorName = encodeURIComponent(sensorName).replace(/'/g, "%27");
                             let safeDeviceType = encodeURIComponent(deviceType).replace(/'/g, "%27");
+                            let safeDropdownId = "export_" + safeSensorName.replace(/[^a-zA-Z0-9]/g, '');
 
                             let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
                             
@@ -1016,14 +858,17 @@
                                 `;
                             }
 
-                            // Dedicated export buttons for this specific station
+                            // Dynamic Dropdown inside the popup
                             let sensorExportBtnsHtml = `
-                                <div class="sensor-export-group">
-                                    <button class="btn-sensor-export" onclick="window.exportSensorData('${safeSensorName}', '${safeDeviceType}', 7)" title="Download past 7 days CSV for this sensor">
-                                        <i class="fa-solid fa-file-csv"></i> 7D CSV
-                                    </button>
-                                    <button class="btn-sensor-export" onclick="window.exportSensorData('${safeSensorName}', '${safeDeviceType}', 14)" title="Download past 14 days CSV for this sensor">
-                                        <i class="fa-solid fa-file-csv"></i> 14D CSV
+                                <div class="popup-export-container">
+                                    <select id="${safeDropdownId}" class="popup-export-select">
+                                        <option value="7">Last 7 Days</option>
+                                        <option value="14">Last 14 Days</option>
+                                        <option value="8-2026">August 2026</option>
+                                        <option value="9-2026">September 2026</option>
+                                    </select>
+                                    <button class="btn-sensor-export" onclick="window.executePopupExport('${safeSensorName}', '${safeDeviceType}')" title="Download CSV">
+                                        <i class="fa-solid fa-download"></i> DL
                                     </button>
                                 </div>
                             `;
