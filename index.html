@@ -136,18 +136,6 @@
         }
         .main-export-panel button:hover { background: #0369a1; }
 
-        /* --- Per-Sensor Popup Export UI --- */
-        .popup-export-container {
-            display: flex; gap: 6px; margin-top: 8px; align-items: stretch;
-        }
-        .popup-export-select {
-            flex: 2; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 6px; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 600; outline: none; margin-bottom: 0 !important; cursor: pointer;
-        }
-        .btn-sensor-export {
-            flex: 1.2; background: #0284c7; color: #ffffff; border: none; border-radius: 6px; font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;
-        }
-        .btn-sensor-export:hover { background: #0369a1; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25); }
-
         /* --- Chart Modal Export UI --- */
         .chart-export-container {
             display: flex; gap: 6px; align-items: center; margin-right: 10px;
@@ -306,7 +294,7 @@
         </div>
     </div>
 
-    <!-- NEW MAIN EXPORT PANEL -->
+    <!-- MAIN EXPORT PANEL -->
     <div class="main-export-panel">
         <h3><i class="fa-solid fa-file-csv"></i> Data Export</h3>
         
@@ -605,12 +593,6 @@
             triggerExport(station, timeframe, "ALL");
         }
 
-        window.executePopupExport = function(safeName, safeType) {
-            var selectId = "export_" + safeName.replace(/[^a-zA-Z0-9]/g, '');
-            var timeframe = document.getElementById(selectId).value;
-            triggerExport(decodeURIComponent(safeName), timeframe, decodeURIComponent(safeType));
-        }
-
         window.executeChartExport = function() {
             var timeframe = document.getElementById('chartExportTimeframe').value;
             triggerExport(activeChartSensor.name, timeframe, activeChartSensor.type);
@@ -843,10 +825,6 @@
                             archivedDataMap[historyKey].currentWlBadgeHtml = currentWlBadgeHtml;
 
                             let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
-                            let safeSensorName = encodeURIComponent(sensorName).replace(/'/g, "%27");
-                            let safeDeviceType = encodeURIComponent(deviceType).replace(/'/g, "%27");
-                            let safeDropdownId = "export_" + safeSensorName.replace(/[^a-zA-Z0-9]/g, '');
-
                             let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
                             
                             let chartBtnHtml = "";
@@ -858,21 +836,6 @@
                                 `;
                             }
 
-                            // Dynamic Dropdown inside the popup
-                            let sensorExportBtnsHtml = `
-                                <div class="popup-export-container">
-                                    <select id="${safeDropdownId}" class="popup-export-select">
-                                        <option value="7">Last 7 Days</option>
-                                        <option value="14">Last 14 Days</option>
-                                        <option value="8-2026">August 2026</option>
-                                        <option value="9-2026">September 2026</option>
-                                    </select>
-                                    <button class="btn-sensor-export" onclick="window.executePopupExport('${safeSensorName}', '${safeDeviceType}')" title="Download CSV">
-                                        <i class="fa-solid fa-download"></i> DL
-                                    </button>
-                                </div>
-                            `;
-
                             historyHtml = `
                                 <div class="history-container">
                                     <div class="history-title">
@@ -882,7 +845,6 @@
                                         ${archivedDataMap[historyKey].html.join('')}
                                     </div>
                                     ${chartBtnHtml}
-                                    ${sensorExportBtnsHtml}
                                 </div>
                             `;
                         }
