@@ -88,7 +88,14 @@
         }
         .filter-container select option { background: #1e293b; color: white; }
 
-        /* Export Buttons */
+        /* All-Network Export Buttons in Top Bar */
+        .export-container {
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding-right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
         .btn-export {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -109,6 +116,40 @@
             background-color: rgba(56, 189, 248, 0.2);
             border-color: #38bdf8;
             color: #f8fafc;
+        }
+
+        /* Per-Sensor Popup Export Buttons */
+        .sensor-export-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-sensor-export {
+            flex: 1;
+            background: #f8fafc;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            padding: 8px 6px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-sensor-export:hover {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
         }
 
         /* iOS-Style Theme Switch */
@@ -239,7 +280,7 @@
             background: #0f172a; 
             color: #f8fafc; 
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px; 
+            padding: 10px; 
             border-radius: 8px; 
             font-size: 11px; 
             font-family: 'Inter', sans-serif;
@@ -403,9 +444,10 @@
         }
         .chart-modal-overlay.open .chart-modal-content { transform: scale(1) translateY(0); }
         
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-size: 14px; font-weight: 900; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
         
+        .chart-actions { display: flex; align-items: center; gap: 8px; }
         .chart-close { background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .chart-close:hover { background: #ef4444; color: white; }
         
@@ -438,12 +480,12 @@
             </select>
         </div>
 
-        <div class="export-container" style="border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px; display: flex; gap: 8px;">
-            <button class="btn-export" onclick="exportHistoricalData(7)" title="Download 7-Day Trend">
-                <i class="fa-solid fa-file-csv"></i> 7D
+        <div class="export-container" title="Export all network data">
+            <button class="btn-export" onclick="exportHistoricalData(7)" title="Download all network 7-Day data">
+                <i class="fa-solid fa-file-csv"></i> All 7D
             </button>
-            <button class="btn-export" onclick="exportHistoricalData(14)" title="Download 14-Day Trend">
-                <i class="fa-solid fa-file-csv"></i> 14D
+            <button class="btn-export" onclick="exportHistoricalData(14)" title="Download all network 14-Day data">
+                <i class="fa-solid fa-file-csv"></i> All 14D
             </button>
         </div>
 
@@ -512,7 +554,15 @@
         <div class="chart-modal-content" onclick="event.stopPropagation()">
             <div class="chart-header">
                 <div class="chart-title" id="chart-title">Sensor Name Loading...</div>
-                <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="chart-actions">
+                    <button class="btn-export" id="chartExport7Btn" onclick="window.exportCurrentChartSensor(7)" title="Download 7D CSV for this sensor">
+                        <i class="fa-solid fa-file-csv"></i> 7D CSV
+                    </button>
+                    <button class="btn-export" id="chartExport14Btn" onclick="window.exportCurrentChartSensor(14)" title="Download 14D CSV for this sensor">
+                        <i class="fa-solid fa-file-csv"></i> 14D CSV
+                    </button>
+                    <button class="chart-close" onclick="window.closeChart()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="chart-container">
                 <canvas id="historyChart"></canvas>
@@ -545,9 +595,10 @@
         var archiveCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-3_dPrWSR7GQ9AKKIFJ9YRbbUHyJjx4_mWTwVuuqQ68oQhUN_yz4hqP2nreUu-U8eM5_grye4lefD/pub?gid=1557794138&single=true&output=csv'; 
         
         var allDownloadedData = [];
-        var globalArchiveData = []; // Added for export functionality
+        var globalArchiveData = []; 
         var archivedDataMap = {}; 
         var currentChartInstance = null; 
+        var activeChartSensor = { name: '', type: '' };
 
         function getColor(status) {
             if (!status) return '#475569'; 
@@ -617,7 +668,7 @@
             ]);
 
             allDownloadedData = mainData;
-            globalArchiveData = archiveData; // Store globally for exporting functionality
+            globalArchiveData = archiveData;
             
             archivedDataMap = {};
             var twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
@@ -698,20 +749,17 @@
         fetchAllData();
         setInterval(fetchAllData, 60000); 
 
-        // New Export Function
+        // Export All Network Data
         window.exportHistoricalData = function(days) {
             if (!globalArchiveData || globalArchiveData.length === 0) {
-                alert("Data is still loading. Please try again in a few seconds.");
+                alert("Archive data is still loading. Please try again in a few seconds.");
                 return;
             }
 
-            // Calculate cutoff timestamp
             var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
 
-            // Filter the data based on your date columns
             var filteredData = globalArchiveData.filter(function(row, index) {
-                if (index === 0) return true; // Always keep the header row
-                
+                if (index === 0) return true; // Keep header row
                 if (!row || row.length < 9) return false;
                 
                 let rawDate = row[12] || row[6] || ""; 
@@ -721,22 +769,70 @@
                 return !isNaN(recordDate.getTime()) && recordDate.getTime() >= cutoffTime;
             });
 
-            // Convert array back to CSV string using PapaParse
-            var csvContent = Papa.unparse(filteredData);
+            downloadCsvFile(filteredData, `ALL_SENSORS_${days}D_Trend.csv`);
+        };
 
-            // Create a Blob and trigger the download
+        // Export Single Specific Sensor Data
+        window.exportSensorData = function(encSensor, encType, days) {
+            var targetSensor = decodeURIComponent(encSensor).trim().toUpperCase();
+            var targetDevice = decodeURIComponent(encType).trim().toUpperCase();
+
+            if (!globalArchiveData || globalArchiveData.length === 0) {
+                alert("Archive data is still loading. Please try again in a few seconds.");
+                return;
+            }
+
+            var cutoffTime = new Date().getTime() - (days * 24 * 60 * 60 * 1000);
+
+            var filteredData = globalArchiveData.filter(function(row, index) {
+                if (index === 0) return true; // Keep header row
+                if (!row || row.length < 9) return false;
+
+                var dType = (row[0] || "").toString().trim().toUpperCase();
+                var sName = (row[1] || "").toString().trim().toUpperCase();
+
+                if (sName !== targetSensor || dType !== targetDevice) {
+                    return false;
+                }
+
+                let rawDate = row[12] || row[6] || ""; 
+                let safeDateString = String(rawDate).replace(/-/g, '/');
+                let recordDate = new Date(safeDateString);
+
+                return !isNaN(recordDate.getTime()) && recordDate.getTime() >= cutoffTime;
+            });
+
+            if (filteredData.length <= 1) {
+                alert(`No records found for ${targetSensor} (${targetDevice}) in the last ${days} days.`);
+                return;
+            }
+
+            let cleanFileName = targetSensor.replace(/[^A-Z0-9]/gi, '_').replace(/_+/g, '_');
+            downloadCsvFile(filteredData, `${cleanFileName}_${targetDevice}_${days}D_Trend.csv`);
+        };
+
+        // Export directly from open chart
+        window.exportCurrentChartSensor = function(days) {
+            if (activeChartSensor.name && activeChartSensor.type) {
+                window.exportSensorData(encodeURIComponent(activeChartSensor.name), encodeURIComponent(activeChartSensor.type), days);
+            }
+        };
+
+        // Helper function to trigger browser download
+        function downloadCsvFile(dataArray, filename) {
+            var csvContent = Papa.unparse(dataArray);
             var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             var link = document.createElement("a");
             var url = URL.createObjectURL(blob);
             
             link.setAttribute("href", url);
-            link.setAttribute("download", `CBFEWS_Data_${days}_Days_Trend.csv`);
+            link.setAttribute("download", filename);
             link.style.visibility = 'hidden';
             
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        };
+        }
 
         document.getElementById('sensorFilter').addEventListener('change', renderMapData);
 
@@ -906,6 +1002,9 @@
                             archivedDataMap[historyKey].currentWlBadgeHtml = currentWlBadgeHtml;
 
                             let safeKey = encodeURIComponent(historyKey).replace(/'/g, "%27");
+                            let safeSensorName = encodeURIComponent(sensorName).replace(/'/g, "%27");
+                            let safeDeviceType = encodeURIComponent(deviceType).replace(/'/g, "%27");
+
                             let hasChartData = archivedDataMap[historyKey].raw.some(d => !isNaN(d.wl) || !isNaN(d.rg));
                             
                             let chartBtnHtml = "";
@@ -917,6 +1016,18 @@
                                 `;
                             }
 
+                            // Dedicated export buttons for this specific station
+                            let sensorExportBtnsHtml = `
+                                <div class="sensor-export-group">
+                                    <button class="btn-sensor-export" onclick="window.exportSensorData('${safeSensorName}', '${safeDeviceType}', 7)" title="Download past 7 days CSV for this sensor">
+                                        <i class="fa-solid fa-file-csv"></i> 7D CSV
+                                    </button>
+                                    <button class="btn-sensor-export" onclick="window.exportSensorData('${safeSensorName}', '${safeDeviceType}', 14)" title="Download past 14 days CSV for this sensor">
+                                        <i class="fa-solid fa-file-csv"></i> 14D CSV
+                                    </button>
+                                </div>
+                            `;
+
                             historyHtml = `
                                 <div class="history-container">
                                     <div class="history-title">
@@ -926,6 +1037,7 @@
                                         ${archivedDataMap[historyKey].html.join('')}
                                     </div>
                                     ${chartBtnHtml}
+                                    ${sensorExportBtnsHtml}
                                 </div>
                             `;
                         }
@@ -1041,9 +1153,14 @@
             var dataObj = archivedDataMap[historyKey];
             if (!dataObj || dataObj.raw.length === 0) return;
 
-            var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
             var lastUnderscoreIndex = historyKey.lastIndexOf('_');
             var sensorNameOnly = historyKey.substring(0, lastUnderscoreIndex);
+            var deviceTypeOnly = historyKey.substring(lastUnderscoreIndex + 1);
+
+            // Record current active sensor for chart modal export buttons
+            activeChartSensor = { name: sensorNameOnly, type: deviceTypeOnly };
+
+            var sortedData = [...dataObj.raw].sort((a, b) => a.timestamp - b.timestamp);
             var t = sensorThresholds[sensorNameOnly] || sensorThresholds['DEFAULT'];
 
             var labels = sortedData.map(d => [d.timeStr, d.dateStr]);
